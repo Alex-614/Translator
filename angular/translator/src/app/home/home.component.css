@@ -1,0 +1,53 @@
+main{
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family:Arial;
+	font-size:2rem;
+	font-weight:bold;
+}
+
+main p{
+	color: white;
+	text-shadow: 2px 2px 1px #3d768a;
+	text-align: center;
+	margin: 0px;
+}
+
+#ip_sessionId {
+    box-shadow: 0px 10px 14px -7px #276873;
+    font-size: 2rem;
+	text-transform:uppercase;
+	text-align: center;
+    border-width: 1px;
+	border-radius:8px;
+    border-color: black;
+    width: 17rem;
+}
+
+.btn_main {
+	box-shadow: 0px 10px 14px -7px #276873;
+    width: 17rem;
+	background:linear-gradient(to bottom, #01C5BB 5%, #01C5AA 100%);
+	background-color:#01C5BB;
+    border-width: 0px;
+	border-radius:8px;
+	cursor:pointer;
+	color:#ffffff;
+    font-weight: bold;
+	font-size:2rem;
+	padding:13px 32px;
+    margin-top: 2rem;
+	margin-bottom: 1rem;
+	text-decoration:none;
+	text-shadow:2px 2px 1px #3d768a;
+}
+.btn_main:hover {
+	background:linear-gradient(to bottom, #01C5BB 5%, #41D5CB 100%);
+	background-color:#01C5BB;
+}
+.btn_main:active {
+	position:relative;
+	top:1px;
+}
