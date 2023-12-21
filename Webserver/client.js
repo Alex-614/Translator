@@ -17,7 +17,7 @@ function btn_show_start() {
     statusField.innerText = 'Press start';
 }
 
-function negotiate() {
+function negotiate(uri_append) { // setup connection
     return pc.createOffer().then(function (offer) {
         return pc.setLocalDescription(offer);
     }).then(function () {
@@ -38,10 +38,11 @@ function negotiate() {
     }).then(function () {
         var offer = pc.localDescription;
         console.log(offer.sdp);
-        return fetch('offer', {
+        return fetch('http://127.0.0.1:2700/' + uri_append, { // request offer from server [url here]
             body: JSON.stringify({
                 sdp: offer.sdp,
                 type: offer.type,
+                language: 'en'
             }),
             headers: {
                 'Content-Type': 'application/json'
@@ -51,6 +52,7 @@ function negotiate() {
     }).then(function (response) {
         return response.json();
     }).then(function (answer) {
+        document.getElementById("room").innerText = answer.roomid;
         console.log(answer.sdp);
         return pc.setRemoteDescription(answer);
     }).catch(function (e) {
@@ -70,7 +72,7 @@ function performRecvPartial(str) {
     document.getElementById('partial').innerText = '> ' + str;
 }
 
-function start() {
+function create() { // setup components
     btn_show_stop();
     statusField.innerText = 'Connecting...';
     var config = {
@@ -125,12 +127,63 @@ function start() {
         stream.getTracks().forEach(function (track) {
             pc.addTrack(track, stream);
         });
-        return negotiate();
+        return negotiate("create"); // connect
     }, function (err) {
         console.log('Could not acquire media: ' + err);
         btn_show_start();
     });
 }
+
+
+function join() { // setup components
+    btn_show_stop();
+    statusField.innerText = 'Connecting...';
+    var config = {
+        sdpSemantics: 'unified-plan'
+    };
+
+    pc = new RTCPeerConnection(config);
+
+    dc = pc.createDataChannel('result');
+    dc.onclose = function () {
+        clearInterval(dcInterval);
+        console.log('Closed data channel');
+        btn_show_start();
+    };
+    dc.onopen = function () {
+        console.log('Opened data channel');
+    };
+    dc.onmessage = function (messageEvent) {
+        statusField.innerText = "Receiving...";
+
+        if (!messageEvent.data) {
+            return;
+        }
+
+        let voskResult;
+        try {
+            voskResult = JSON.parse(messageEvent.data);
+        } catch (error) {
+            console.error(`ERROR: ${error.message}`);
+            return;
+        }
+        if ((voskResult.text?.length || 0) > 0) {
+            performRecvText(voskResult.text);
+        } else if ((voskResult.partial?.length || 0) > 0) {
+            performRecvPartial(voskResult.partial);
+        }
+    };
+
+    pc.oniceconnectionstatechange = function () {
+        if (pc.iceConnectionState == 'disconnected') {
+            console.log('Disconnected');
+        }
+    }
+    
+    negotiate("join?room=" + document.getElementById("roomid").value);
+
+}
+
 
 function stop() {
 
@@ -158,3 +211,77 @@ function stop() {
         pc.close();
     }, 500);
 }
+
+
+
+
+
+/*
+user_uuid = crypto.randomUUID();
+console.log("client guid: " + user_uuid);
+
+
+
+let socket = new WebSocket("ws://127.0.0.1:2700/ws");
+
+socket.onopen = function(e) {
+  alert("[open] Connection established");
+  alert("Sending to server");
+  socket.send('{"action": "join", "roomid": "test"}');
+};
+
+socket.onmessage = function(event) {
+  alert(`[message] Data received from server: ${event.data}`);
+};
+
+socket.onclose = function(event) {
+  if (event.wasClean) {
+    alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+  } else {
+    // e.g. server process killed or network down
+    // event.code is usually 1006 in this case
+    alert('[close] Connection died');
+  }
+};
+
+socket.onerror = function(error) {
+  alert(`[error]`);
+};
+
+
+
+
+/*  for client endpoint
+// Create a new EventSource instance with the URL of the SSE endpoint on the server
+const eventSource = new EventSource('/sse-endpoint');
+
+// Event listener for 'message' events
+eventSource.addEventListener('message', (event) => {
+  const message = event.data;
+
+  // Handle the received message as needed
+  console.log('Received message:', message);
+});
+
+// Event listener for 'error' events
+eventSource.addEventListener('error', (error) => {
+  // Handle errors that occur with the SSE connection
+  console.error('Error occurred:', error);
+});
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -14,11 +14,13 @@ from aiohttp.web_exceptions import HTTPServiceUnavailable
 from aiortc import RTCSessionDescription, RTCPeerConnection
 from av.audio.resampler import AudioResampler
 
+import aiohttp_cors
+
 ROOT = Path(__file__).parent
 
 vosk_interface = os.environ.get('VOSK_SERVER_INTERFACE', '0.0.0.0')
 vosk_port = int(os.environ.get('VOSK_SERVER_PORT', 2700))
-vosk_model_path = os.environ.get('VOSK_MODEL_PATH', 'C:/Users/daezu/Desktop/THBingen/MOVS/project/vosk/vosk-model-en-us-0.22')
+vosk_model_path = os.environ.get('VOSK_MODEL_PATH', '../../models/vosk-model-en-us-0.22')
 vosk_cert_file = os.environ.get('VOSK_CERT_FILE', None)
 vosk_key_file = os.environ.get('VOSK_KEY_FILE', None)
 vosk_dump_file = os.environ.get('VOSK_DUMP_FILE', None)
@@ -90,8 +92,9 @@ class KaldiTask:
             print(result)
             self.__channel.send(result)
 
+
 async def index(request):
-    content = open(str(ROOT / 'static' / 'index.html')).read()
+    content = open(str(ROOT / '../webserver' / 'index.html')).read()
     return web.Response(content_type='text/html', text=content)
 
 
@@ -150,6 +153,17 @@ if __name__ == '__main__':
     app.router.add_post('/offer', offer)
 
     app.router.add_get('/', index)
-    app.router.add_static('/static/', path=ROOT / 'static', name='static')
+    app.router.add_static('/webserver/', path=ROOT / '../webserver', name='static')
+
+    cors = aiohttp_cors.setup(app, defaults={
+    "*": aiohttp_cors.ResourceOptions(
+            allow_credentials=True,
+            expose_headers="*",
+            allow_headers="*"
+        )
+    })
+
+    for route in list(app.router.routes()):
+        cors.add(route)
 
     web.run_app(app, port=vosk_port, ssl_context=ssl_context)
