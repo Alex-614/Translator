@@ -17,6 +17,7 @@ from av.audio.resampler import AudioResampler
 
 import random, aiohttp_cors, websockets
 from websockets.server import serve
+from urllib import request, parse
 
 ROOT = Path(__file__).parent
 WEBSERVER = Path(__file__).parent.parent
@@ -28,10 +29,16 @@ vosk_cert_file = os.environ.get('VOSK_CERT_FILE', None)
 vosk_key_file = os.environ.get('VOSK_KEY_FILE', None)
 vosk_dump_file = os.environ.get('VOSK_DUMP_FILE', None)
 
-model = Model(vosk_model_path)
+translation_url = os.environ.get('TRANSLATION_URL', 'http://127.0.0.1:5000/')
+
+models: dict[str: Model] = {"en": Model(vosk_model_path)}
 pool = concurrent.futures.ThreadPoolExecutor((os.cpu_count() or 1))
 dump_fd = None if vosk_dump_file is None else open(vosk_dump_file, "wb")
 
+class Room:
+    pass
+
+rooms: dict[str, Room] = {}
 
 class Log:
     lastPrint = "info"
@@ -47,6 +54,23 @@ class Log:
             print("----- Error -----")
         print(error)
         cls.lastPrint = "error"
+
+def translate(q: str, source: str = "en", target: str = "de", timeout: int | None = None):
+    params: dict[str, str] = {"q": q, "source": source, "target": target}
+    url_params = parse.urlencode(params)
+    req = request.Request(translation_url + "translate", data=url_params.encode())
+    response = request.urlopen(req, timeout = timeout)
+    response_str = response.read().decode()
+    return str(json.loads(response_str)["translatedText"])
+
+def detect(q: str, timeout: int | None = None):
+    params: dict[str, str] = {"q": q}
+    url_params = parse.urlencode(params)
+    req = request.Request(translation_url + "detect", data=url_params.encode())
+    response = request.urlopen(req, timeout = timeout)
+    response_str = response.read().decode()
+    return json.loads(response_str)
+
 
 
 
@@ -70,7 +94,9 @@ class KaldiTask: # transcription
         self.__track = None
         self.__channel = None
         self.channels:list = []
-        self.__recognizer = KaldiRecognizer(model, 48000)
+        self.language = "en"
+        self.__recognizer = KaldiRecognizer(models[self.language], 48000)
+        self.__onSend = lambda: None
 
     async def set_audio_track(self, track):
         self.__track = track
@@ -101,7 +127,7 @@ class KaldiTask: # transcription
             fr = await self.__track.recv()
             frames.append(fr)
 
-            # We need to collect frames so we don't send partial results too often
+            # collect frames to not send partial results too often
             if len(frames) < max_frames:
                continue
 
@@ -115,15 +141,13 @@ class KaldiTask: # transcription
                 dump_fd.write(bytes(dataframes))
 
             result = await loop.run_in_executor(pool, process_chunk, self.__recognizer, bytes(dataframes))
-            print(result)
+            result: dict[str, str] = json.loads(result)
+            result["language"] = self.language
             #self.__channel.send(result)
-            for channel in self.channels:
-                try:
-                    channel.send(result)
-                except:
-                    None
-
-
+            self.__onSend(result)
+    
+    def setOnSend(self, do):
+        self.__onSend = do
 
 
 async def join(request):
@@ -138,12 +162,6 @@ async def join(request):
             text='{"error": "room not found"}')
     room = rooms.get(roomid)
 
-    """
-    if not params["username"] in room.getUsesrs().keys():
-        return web.Response(
-            content_type='application/json',
-            text='{"error": "user not in room"}')
-    """
     user: User = User()
     room.getUsers().append(user)
     language = params["language"]
@@ -159,14 +177,14 @@ async def join(request):
     @pc.on('datachannel')
     async def on_datachannel(channel):
         channel.send('{}') # Dummy message to make the UI change to "Recieiving"
-        user.setChannel(channel)
+        user.setDataChannel(channel)
         await room.getTask().add_text_channel(channel)
 
     @pc.on('iceconnectionstatechange')
     async def on_iceconnectionstatechange():
         if pc.iceConnectionState == 'failed':
             room.getUsers().remove(user)
-            await room.getTask().remove_text_channel(user.getChannel())
+            await room.getTask().remove_text_channel(user.getDataChannel())
             await pc.close()
 
     await pc.setRemoteDescription(offer)
@@ -195,15 +213,18 @@ async def create(request):
     rooms[room.getID()] = room
 
     user: User = User()
+    room.getUsers().append(user)
     user.setLanguage(language)
     user.setRTCPeerConnection(RTCPeerConnection())
     pc: RTCPeerConnection = user.getRTCPeerConnection()
     
     kaldi = room.getTask()
+    kaldi.setOnSend(room.sendToUsers)
 
     @pc.on('datachannel')
     async def on_datachannel(channel):
         channel.send('{}') # Dummy message to make the UI change to "Listening"
+        user.setDataChannel(channel)
         await kaldi.add_text_channel(channel)
         await kaldi.start()
 
@@ -245,7 +266,6 @@ class Room:
         while id in rooms.keys():
             random.shuffle(chars)
             id = "".join(chars[0:5])
-        print("generated id: " + id)
         return id
 
     def __init__(self):
@@ -268,6 +288,21 @@ class Room:
             await user.getRTCPeerConnection().close()
         rooms.pop(self.id)
 
+    def sendToUsers(self, result: dict[str, str]):
+        language = result.get("language")
+        partial = result.get("partial")
+        text = result.get("text")
+        translated = ""
+        for user in self.users:
+            try:
+                if partial != None and partial != "":
+                    translated = json.dumps({"partial": translate(q = partial, source = language, target = user.getLanguage(), timeout = 250)})
+                elif text != None and text != "":
+                    translated = json.dumps({"text": translate(q = text, source = language, target = user.getLanguage(), timeout = 250)})
+                print("sending to: " + user.getLanguage() + " translated: '" + str(translated) + "' type: " + str(type(translated)))
+                user.getDataChannel().send(translated)
+            except:
+                pass
 
 class User:
 
@@ -287,13 +322,10 @@ class User:
     def setLanguage(self, language):
         self.language = language
     
-    def setChannel(self, channel):
+    def setDataChannel(self, channel):
         self.channel = channel
-    def getChannel(self):
+    def getDataChannel(self):
         return self.channel
-    
-
-rooms: dict[str, Room] = {}
 
 
 

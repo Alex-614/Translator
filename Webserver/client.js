@@ -17,7 +17,7 @@ function btn_show_start() {
     statusField.innerText = 'Press start';
 }
 
-function negotiate(uri_append) { // setup connection
+function negotiate(uri_append, language) { // setup connection
     return pc.createOffer().then(function (offer) {
         return pc.setLocalDescription(offer);
     }).then(function () {
@@ -42,7 +42,7 @@ function negotiate(uri_append) { // setup connection
             body: JSON.stringify({
                 sdp: offer.sdp,
                 type: offer.type,
-                language: 'en'
+                language: language
             }),
             headers: {
                 'Content-Type': 'application/json'
@@ -127,7 +127,7 @@ function create() { // setup components
         stream.getTracks().forEach(function (track) {
             pc.addTrack(track, stream);
         });
-        return negotiate("create"); // connect
+        return negotiate("create", "en"); // connect
     }, function (err) {
         console.log('Could not acquire media: ' + err);
         btn_show_start();
@@ -180,7 +180,8 @@ function join() { // setup components
         }
     }
     
-    negotiate("join?room=" + document.getElementById("roomid").value);
+
+    negotiate("join?room=" + document.getElementById("roomid").value, "de");
 
 }
 

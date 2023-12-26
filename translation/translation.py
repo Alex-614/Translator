@@ -1,0 +1,6 @@
+
+import libretranslate
+
+libretranslate.main()
+
+
