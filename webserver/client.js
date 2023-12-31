@@ -1,4 +1,4 @@
-// peer connection
+// webRTC peer connection
 var pc = null;
 var dc = null, dcInterval = null;
 
@@ -17,6 +17,7 @@ function btn_show_start() {
     statusField.innerText = 'Press start';
 }
 
+// send a webRTC connection offer and additional information to the sfu
 function negotiate(uri_append, language) { // setup connection
     return pc.createOffer().then(function (offer) {
         return pc.setLocalDescription(offer);
@@ -38,7 +39,7 @@ function negotiate(uri_append, language) { // setup connection
     }).then(function () {
         var offer = pc.localDescription;
         console.log(offer.sdp);
-        return fetch('http://127.0.0.1:2700/' + uri_append, { // request offer from server [url here]
+        return fetch('http://127.0.0.1:2700/' + uri_append, { // fetch request offer from server [url here]
             body: JSON.stringify({
                 sdp: offer.sdp,
                 type: offer.type,
@@ -72,7 +73,8 @@ function performRecvPartial(str) {
     document.getElementById('partial').innerText = '> ' + str;
 }
 
-function create() { // setup components
+// send a creation request to the sfu
+function create() {
     btn_show_stop();
     statusField.innerText = 'Connecting...';
     var config = {
@@ -127,15 +129,15 @@ function create() { // setup components
         stream.getTracks().forEach(function (track) {
             pc.addTrack(track, stream);
         });
-        return negotiate("create", "en"); // connect
+        return negotiate("create", "en");
     }, function (err) {
         console.log('Could not acquire media: ' + err);
         btn_show_start();
     });
 }
 
-
-function join() { // setup components
+// send a join request to the sfu
+function join() {
     btn_show_stop();
     statusField.innerText = 'Connecting...';
     var config = {
@@ -180,12 +182,11 @@ function join() { // setup components
         }
     }
     
-
     negotiate("join?room=" + document.getElementById("roomid").value, "de");
 
 }
 
-
+// stop all streams and close the connection
 function stop() {
 
     // close data channel
