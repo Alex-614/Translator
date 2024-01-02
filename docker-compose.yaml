@@ -1,5 +1,38 @@
+version: "3.8"
 
 
 
+services:
+  transcription:
+    container_name: transcription
+    hostname: transcription
+    networks:
+      - backend_network
+    build:
+      context: ./transcription
+      dockerfile: Dockerfile
+    volumes:
+      - /transcription/
+    ports:
+      - "2700:2700"
+    restart: on-failure
+    environment:
+      - TRANSLATION_URL=http://backend_network:5000
+      - SERVER_PORT=2700
+      - VOSK_MODEL_PATH=models/vosk-model-en-us-0.22
 
 
+  translation:
+    container_name: translation
+    hostname: translation
+    networks:
+      - backend_network
+    build:
+      context: ./translation
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    restart: on-failure
+
+networks:
+  backend_network:

@@ -22,18 +22,20 @@ from urllib import request, parse
 ROOT = Path(__file__).parent
 WEBSERVER = Path(__file__).parent.parent
 
-vosk_interface = os.environ.get('VOSK_SERVER_INTERFACE', '0.0.0.0')
-vosk_port = int(os.environ.get('VOSK_SERVER_PORT', 2700))
+
 vosk_model_path = os.environ.get('VOSK_MODEL_PATH', '../../models/vosk-model-en-us-0.22')
 vosk_cert_file = os.environ.get('VOSK_CERT_FILE', None)
 vosk_key_file = os.environ.get('VOSK_KEY_FILE', None)
-vosk_dump_file = os.environ.get('VOSK_DUMP_FILE', None)
 
-translation_url = os.environ.get('TRANSLATION_URL', 'http://127.0.0.1:5000/')
+dump_file = os.environ.get('DUMP_FILE', None)
+
+transcription_port = int(os.environ.get('TRANSCRIPTION_PORT', 2700))
+
+translation_domain = os.environ.get('TRANSLATION_DOMAIN', '127.0.0.1:5000')
 
 models: dict[str: Model] = {"en": Model(vosk_model_path)}
 pool = concurrent.futures.ThreadPoolExecutor((os.cpu_count() or 1))
-dump_fd = None if vosk_dump_file is None else open(vosk_dump_file, "wb")
+dump_fd = None if dump_file is None else open(dump_file, "wb")
 
 # dict[str: Room]
 rooms: dict = {}
@@ -59,7 +61,7 @@ class Log:
 def translate(q: str, source: str = "en", target: str = "de", timeout: int | None = None):
     params: dict[str, str] = {"q": q, "source": source, "target": target}
     url_params = parse.urlencode(params)
-    req = request.Request(translation_url + "translate", data=url_params.encode())
+    req = request.Request("http://" + translation_domain + "/translate", data=url_params.encode())
     response = request.urlopen(req, timeout = timeout)
     response_str = response.read().decode()
     return str(json.loads(response_str)["translatedText"])
@@ -70,7 +72,7 @@ def translate(q: str, source: str = "en", target: str = "de", timeout: int | Non
 def detect(q: str, timeout: int | None = None):
     params: dict[str, str] = {"q": q}
     url_params = parse.urlencode(params)
-    req = request.Request(translation_url + "detect", data=url_params.encode())
+    req = request.Request("http://" + translation_domain + "/detect", data=url_params.encode())
     response = request.urlopen(req, timeout = timeout)
     response_str = response.read().decode()
     return json.loads(response_str)
@@ -423,7 +425,7 @@ if __name__ == '__main__':
     for route in list(app.router.routes()):
         cors.add(route)
     
-    web.run_app(app, port=vosk_port, ssl_context=ssl_context)
+    web.run_app(app, port=transcription_port, ssl_context=ssl_context)
 
 
 
