@@ -15,7 +15,7 @@ from aiohttp.web_exceptions import HTTPServiceUnavailable
 from aiortc import RTCSessionDescription, RTCPeerConnection
 from av.audio.resampler import AudioResampler
 
-import random, aiohttp_cors, websockets
+import random, aiohttp_cors
 from websockets.server import serve
 from urllib import request, parse
 
@@ -143,7 +143,7 @@ class KaldiTask: # transcription
     
     def setOnSend(self, do):
         self.__onSend = do
-
+ 
 #
 # join a existing room
 # the request should contain the roomid, of the room the user wants to join and the language, the transribed text will be translated to
@@ -182,13 +182,11 @@ async def join(request):
     async def on_datachannel(channel):
         channel.send('{}') # Dummy message to make the UI change to "Recieiving"
         user.setDataChannel(channel)
-        await room.getTask().add_text_channel(channel)
 
     @pc.on('iceconnectionstatechange')
     async def on_iceconnectionstatechange():
         if pc.iceConnectionState == 'failed':
             room.getUsers().remove(user)
-            await room.getTask().remove_text_channel(user.getDataChannel())
             await pc.close()
 
     await pc.setRemoteDescription(offer)
@@ -237,7 +235,6 @@ async def create(request):
     async def on_datachannel(channel):
         channel.send('{}') # Dummy message to make the UI change to "Listening"
         user.setDataChannel(channel)
-        await kaldi.add_text_channel(channel)
         await kaldi.start()
 
     @pc.on('iceconnectionstatechange')
