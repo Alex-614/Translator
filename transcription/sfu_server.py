@@ -35,10 +35,8 @@ models: dict[str: Model] = {"en": Model(vosk_model_path)}
 pool = concurrent.futures.ThreadPoolExecutor((os.cpu_count() or 1))
 dump_fd = None if vosk_dump_file is None else open(vosk_dump_file, "wb")
 
-class Room:
-    pass
-
-rooms: dict[str, Room] = {}
+# dict[str: Room]
+rooms: dict = {}
 
 class Log:
     lastPrint = "info"
@@ -55,6 +53,9 @@ class Log:
         print(error)
         cls.lastPrint = "error"
 
+
+# send a request to the libretranslate service
+# to translate a text q from language source to language target
 def translate(q: str, source: str = "en", target: str = "de", timeout: int | None = None):
     params: dict[str, str] = {"q": q, "source": source, "target": target}
     url_params = parse.urlencode(params)
@@ -63,6 +64,9 @@ def translate(q: str, source: str = "en", target: str = "de", timeout: int | Non
     response_str = response.read().decode()
     return str(json.loads(response_str)["translatedText"])
 
+# send a language to the libretranslate service
+# to detext the language of the text
+# NOT USED YET
 def detect(q: str, timeout: int | None = None):
     params: dict[str, str] = {"q": q}
     url_params = parse.urlencode(params)
@@ -71,10 +75,8 @@ def detect(q: str, timeout: int | None = None):
     response_str = response.read().decode()
     return json.loads(response_str)
 
-
-
-
-def process_chunk(rec, message): # transcribe
+# transcribe the audio
+def process_chunk(rec, message):
     try:
         res = rec.AcceptWaveform(message)
     except Exception:
@@ -86,29 +88,23 @@ def process_chunk(rec, message): # transcribe
             result = rec.PartialResult()
     return result
 
-
+#
+# KaldiTask manages the transcription of a audio stream and calls onSend whenever a part is transcribed
+#
+# the model is selected from models (preloaded vosk AI models)
+# currently only the english model
+#
 class KaldiTask: # transcription
     def __init__(self):
         self.__resampler = AudioResampler(format='s16', layout='mono', rate=48000)
         self.__audio_task = None
         self.__track = None
-        self.__channel = None
-        self.channels:list = []
         self.language = "en"
         self.__recognizer = KaldiRecognizer(models[self.language], 48000)
         self.__onSend = lambda: None
 
     async def set_audio_track(self, track):
         self.__track = track
-
-    async def set_text_channel(self, channel):
-        self.__channel = channel
-
-    async def add_text_channel(self, channel):
-        self.channels.append(channel)
-
-    async def remove_text_channel(self, channel):
-        self.channels.remove(channel)
 
     async def start(self):
         self.__audio_task = asyncio.create_task(self.__run_audio_xfer())
@@ -143,13 +139,21 @@ class KaldiTask: # transcription
             result = await loop.run_in_executor(pool, process_chunk, self.__recognizer, bytes(dataframes))
             result: dict[str, str] = json.loads(result)
             result["language"] = self.language
-            #self.__channel.send(result)
             self.__onSend(result)
     
     def setOnSend(self, do):
         self.__onSend = do
 
-
+#
+# join a existing room
+# the request should contain the roomid, of the room the user wants to join and the language, the transribed text will be translated to
+# besides the request should contain the webRTC connection offer ('sdp' & 'type')
+# 
+# a user object is initialized and added to the list of users in the room object
+#
+# the response is the webRTC answer
+# the connection consists of the datachannel to send the transcribed text translated to the language the user selected 
+#
 async def join(request):
     params = await request.json()
 
@@ -198,6 +202,14 @@ async def join(request):
             'type': pc.localDescription.type
         }))
 
+#
+# create a new room
+# the request should contain the language the room leader speaks in and the webRTC peer connection offer ('sdp' & 'type')
+# a room object is with a new generated ID is initialized
+# the response contains the webRTC connection answer and the roomid
+#
+# the webRTC connection consists of the audio track for sending the speech of the user and a datachannel for sending the transcription (same language as spoken)
+# 
 async def create(request):
     params = await request.json()
 
@@ -258,8 +270,10 @@ async def create(request):
 
 class Room:
 
+    # generate a new room id
     @classmethod
     def generateID(cls):
+        # list of chars to generate the id from
         chars:list[str] = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","0","1","2","3","4","5","6","7","8","9"]
         random.shuffle(chars)
         id = "".join(chars[0:5])
@@ -282,28 +296,41 @@ class Room:
     def getTask(self):
         return self.task
 
+    # close the room
+    # closes all connections and deletes the data on memory
     async def close(self):
         await self.task.stop()
         for user in  self.users:
             await user.getRTCPeerConnection().close()
         rooms.pop(self.id)
 
+    # broadcast
     def sendToUsers(self, result: dict[str, str]):
         language = result.get("language")
         partial = result.get("partial")
         text = result.get("text")
         translated = ""
+        # iterate all users
         for user in self.users:
             try:
                 if partial != None and partial != "":
+                    # translate partial
                     translated = json.dumps({"partial": translate(q = partial, source = language, target = user.getLanguage(), timeout = 250)})
                 elif text != None and text != "":
+                    # translate text
                     translated = json.dumps({"text": translate(q = text, source = language, target = user.getLanguage(), timeout = 250)})
-                print("sending to: " + user.getLanguage() + " translated: '" + str(translated) + "' type: " + str(type(translated)))
+                Log.printInfo("sending to: " + user.getLanguage() + " translated: '" + str(translated) + "' type: " + str(type(translated)))
+                # send to user
                 user.getDataChannel().send(translated)
             except:
                 pass
 
+
+#
+# class User; handles all information about connected clients
+# contains the webRTC connection and its datachannel to send the text
+# the language determines the language the user speeks in, or to translate the text to
+#
 class User:
 
     def __init__(self):
@@ -328,7 +355,9 @@ class User:
         return self.channel
 
 
-
+#
+# deprecated
+#
 async def websocket_handler(request):
     Log.printInfo('Websocket connection starting')
     ws = aiohttp.web.WebSocketResponse()
@@ -383,6 +412,7 @@ if __name__ == '__main__':
     app._router.add_post("/join", join)
     app._router.add_post("/create", create)
 
+    # websocket (deprecated)
     #app._router.add_get("/ws", websocket_handler)
 
     cors = aiohttp_cors.setup(app, defaults={
