@@ -30,7 +30,7 @@ public class UserController {
 
     @PostMapping("/user")
     public User createUser(@RequestBody Map<String,String> body){
-        return myUserPort.createUser(body.get("firstname"), body.get("lastname"), body.get("email"), body.get("password"));
+        return myUserPort.createUser(body.get("name"), body.get("email"), body.get("password"));
     }
 
 
