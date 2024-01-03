@@ -1,5 +1,8 @@
+server:
+  port: 8081
+
 spring:
   datasource:
-    url: jdbc:postgresql://127.0.0.1:6543/postgres
+    url: jdbc:postgresql://127.0.0.1:6543/textdb
     username: postgres
-    password: mysecretpassword
+    password: postgres
