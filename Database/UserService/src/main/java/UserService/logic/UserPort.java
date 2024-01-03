@@ -2,13 +2,12 @@ package UserService.logic;
 
 import UserService.logic.Entities.User;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface UserPort {
-    public User createUser(String name, String email, String password);
-    public Optional<User> getUser(Long userId);
-    public Iterable<User> getAllUsers();
-    public User patchUser(Long id, User patchedUser);
-    public boolean deleteUser(Long userId);
+    User createUser(String name, String email, String password);
+    Optional<User> getUser(Long userId);
+    Iterable<User> getAllUsers();
+    User patchUser(Long id, User patchedUser);
+    boolean deleteUser(Long userId);
 }
