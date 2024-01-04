@@ -1,5 +1,7 @@
 import { Component, ViewChild, ElementRef, Renderer2, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { UserService } from '../user.service';
+import { User } from '../user';
 
 @Component({
   selector: 'app-register',
@@ -19,17 +21,30 @@ import { UserService } from '../user.service';
   styleUrl: './register.component.css'
 })
 export class RegisterComponent {
-  constructor(private renderer: Renderer2){}
+  private user: User;
+  private userService: UserService = inject(UserService);
+  constructor(
+    private router: Router,
+    private renderer: Renderer2
+  ) { }
   @ViewChild('p_error') p_error: ElementRef<HTMLParagraphElement>;
-  userService: UserService = inject(UserService);
-  async callRegister(username: String, email: String, password: String, passwordRepeat: String): Promise<boolean> {
-    /** const answer = await this.userService.register(username, email, password);*/
-    if (password == passwordRepeat){
-      this.userService.register(username, email, password).subscribe(
-        data => {console.log(data.createdAt);},
-        error => {console.log(error);}
-      )
-    }else {
+  async callRegister(username: string, email: string, password: string, passwordRepeat: string): Promise<boolean> {
+    if (password == passwordRepeat) {
+      this.renderer.setProperty(this.p_error.nativeElement, 'innerHTML', "");
+      this.user = new User();
+      this.user.name = username;
+      this.user.email = email;
+      this.user.password = password;
+      this.userService.register(this.user).subscribe(
+        data => {
+          console.log(data);
+          /**TODO.... nicer if statement and look if username already exists?? in Rest!!!*/
+          if (data.name == username && data.email == email && data.password == password) {
+            this.router.navigate(['/login', {}]);
+          }
+        }
+      );
+    } else {
       this.renderer.setProperty(this.p_error.nativeElement, 'innerHTML', "Error: Passwords do not match!");
     }
     return true;
