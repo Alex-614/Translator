@@ -2,10 +2,13 @@ package UserService.logic;
 
 import UserService.logic.Entities.User;
 import UserService.logic.Respositories.UserRepository;
+import org.hibernate.exception.ConstraintViolationException;
+import org.postgresql.util.PSQLException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -21,9 +24,21 @@ public class UserService implements UserPort {
     }
 
     @Override
-    public User createUser(String name, String email, String password){
-        User u = new User(name,email,password);
-        return userRepository.save(u);
+    public User createUser(String name, String email, String password) throws DuplicateEmailException, DatabaseException {
+        User u = new User(name, email, password);
+        try {
+            return userRepository.save(u);
+        } catch (DataAccessException e) {
+            if (e.getCause() instanceof ConstraintViolationException constraintViolationException) {
+                if ("23505".equals(constraintViolationException.getSQLState()) && constraintViolationException.getMessage().contains("user_email_key")) {
+                    throw new DuplicateEmailException();
+                } else {
+                    throw new DatabaseException();
+                }
+            } else {
+                throw new RuntimeException("Unexpected error occurred");
+            }
+        }
     }
 
     @Override
