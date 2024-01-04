@@ -13,5 +13,10 @@ export class SessionService {
     return idValid;
   }
 
+  async createSession(): Promise<boolean> {
+    
+    return true;
+  }
+
   constructor() { }
 }

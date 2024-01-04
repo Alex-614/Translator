@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
-import { RouterOutlet, RouterLink } from '@angular/router';
+import { Component, Renderer2, inject } from '@angular/core';
+import { RouterOutlet, RouterLink, Router } from '@angular/router';
 import { LANGUAGES } from '../languages'; 
 import { DropdownModule } from 'primeng/dropdown';
+import { SessionService } from '../session.service';
 
 @Component({
   selector: 'app-account',
@@ -23,11 +24,25 @@ import { DropdownModule } from 'primeng/dropdown';
             </div>
           </ng-template>
         </p-dropdown>
-      <button id="btn_sessionHost" class="btn_main" [routerLink]="['/login/account/sessionhost']">Host a new session</button>
+      <button id="btn_sessionHost" class="btn_main" (click)=createSession()>Host a new session</button>
     </main>
   `,
   styleUrl: './account.component.css'
 })
 export class AccountComponent {
+  constructor(
+    private router: Router,
+    private renderer: Renderer2
+  ){
+  }
   languages = LANGUAGES;
+  sessionService: SessionService = inject(SessionService);
+  async createSession(): Promise<boolean> {
+    const idValid = await this.sessionService.createSession();
+    if (idValid){
+      this.router.navigate(['/login/account/sessionhost', { }]);
+    }
+    console.log(idValid);
+    return true;
+  }
 }
