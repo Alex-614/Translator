@@ -11,14 +11,16 @@ services:
     build:
       context: ./transcription
       dockerfile: Dockerfile
+    image: translator-transcription
     volumes:
       - /transcription/
     ports:
       - "2700:2700"
     restart: on-failure
     environment:
-      - TRANSLATION_URL=http://backend_network:5000
-      - SERVER_PORT=2700
+      - TRANSCRIPTION_DEBUGMODE=True
+      - TRANSLATION_DOMAIN=translation:5000
+      - TRANSCRIPTION_PORT=2700
       - VOSK_MODEL_PATH=models/vosk-model-en-us-0.22
 
 
@@ -30,9 +32,17 @@ services:
     build:
       context: ./translation
       dockerfile: Dockerfile
+    image: translator-translation
+    volumes:
+      - /translation/
     ports:
       - "5000:5000"
     restart: on-failure
+    environment:
+      - TRANSCRIPTION_DEBUGMODE=True
 
 networks:
   backend_network:
+    name: backend_network
+
+

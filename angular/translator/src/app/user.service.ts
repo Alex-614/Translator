@@ -1,16 +1,28 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { map } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { User } from './user';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
-  constructor(private http: HttpClient) {}
-  url = 'http://127.0.0.1:5432/postgres/user';
+  private url: string;
+  constructor(private http: HttpClient) {
+    this.url = 'http://127.0.0.1:8080/user';
+  }
 
-  /*POST HTTP Request */
-  register(name: String, email: String, password: String){
-    return this.http.post<any>('https://reqres.in/api/posts', { title: 'Angular POST Request Example' });
+  /**Get HTTP Requests */
+  public findAll(): Observable<User[]>{
+    return this.http.get<User[]>(this.url);
+  }
+
+  public getByMail(email: string): Observable<User>{
+    return this.http.get<User>(this.url + "/" + email);
+  }
+
+  /**POST HTTP Requests*/
+  public register(user: User) {
+    return this.http.post<User>(this.url, user);
   }
 }
