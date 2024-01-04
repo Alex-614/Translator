@@ -21,8 +21,8 @@ public class UserService implements UserPort {
     }
 
     @Override
-    public User createUser(String firstname, String name, String email, String password){
-        User u = new User(firstname,name,email,password);
+    public User createUser(String name, String email, String password){
+        User u = new User(name,email,password);
         return userRepository.save(u);
     }
 

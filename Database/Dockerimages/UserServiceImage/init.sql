@@ -1,0 +1,8 @@
+CREATE SEQUENCE user_id_seq INCREMENT BY 50;
+
+CREATE TABLE "user" (
+    id BIGINT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL
+);

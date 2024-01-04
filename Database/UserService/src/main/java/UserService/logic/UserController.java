@@ -4,8 +4,6 @@ import UserService.logic.Entities.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -30,7 +28,7 @@ public class UserController {
 
     @PostMapping("/user")
     public User createUser(@RequestBody Map<String,String> body){
-        return myUserPort.createUser(body.get("firstname"), body.get("lastname"), body.get("email"), body.get("password"));
+        return myUserPort.createUser(body.get("name"), body.get("email"), body.get("password"));
     }
 
 
