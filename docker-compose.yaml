@@ -18,7 +18,7 @@ services:
       - "2700:2700"
     restart: on-failure
     environment:
-      - TRANSCRIPTION_DEBUGMODE=True
+      - TRANSCRIPTION_DEBUGMODE=False
       - TRANSLATION_DOMAIN=translation:5000
       - TRANSCRIPTION_PORT=2700
       - VOSK_MODEL_PATH=models/vosk-model-en-us-0.22
@@ -39,7 +39,7 @@ services:
       - "5000:5000"
     restart: on-failure
     environment:
-      - TRANSCRIPTION_DEBUGMODE=True
+      - TRANSCRIPTION_DEBUGMODE=False
 
 networks:
   backend_network:
