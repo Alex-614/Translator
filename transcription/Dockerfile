@@ -4,6 +4,17 @@ FROM python:3.11.2 AS transcription
 WORKDIR /transcription
 COPY requirements.txt ./
 COPY sfu_server.py ./
+COPY start.sh ./
 RUN pip install --no-cache-dir -r requirements.txt
+
+
+RUN mkdir models
+ADD https://alphacephei.com/vosk/models/vosk-model-en-us-0.22.zip models
+#RUN unzip models/vosk-model-en-us-0.22.zip -d models
+
 EXPOSE 2700
-ENTRYPOINT [ "python", "sfu_server.py" ]
+#CMD [ "./start.sh" ]
+#ENTRYPOINT [ "python", "sfu_server.py" ]
+#CMD [ "unzip", "-o", "models/vosk-model-en-us-0.22.zip", "-d", "models" ]
+#ENTRYPOINT [ "unzip", "-o", "models/vosk-model-en-us-0.22.zip", "-d", "models", ";" , "python", "sfu_server.py" ]
+ENTRYPOINT [ "./start.sh" ]

@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:4200")
 public class UserController {
     private final UserPort myUserPort;
 
@@ -27,7 +28,7 @@ public class UserController {
     }
 
     @PostMapping("/user")
-    public User createUser(@RequestBody Map<String,String> body){
+    public User createUser(@RequestBody Map<String,String> body) throws DuplicateEmailException, DatabaseException {
         return myUserPort.createUser(body.get("name"), body.get("email"), body.get("password"));
     }
 

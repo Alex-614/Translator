@@ -6,6 +6,7 @@ import sys
 import os
 import concurrent.futures
 import asyncio
+import logging
 
 from pathlib import Path
 from vosk import KaldiRecognizer, Model
@@ -19,9 +20,24 @@ import random, aiohttp_cors
 from websockets.server import serve
 from urllib import request, parse
 
+
+debugmode = os.environ.get('TRANSCRIPTION_DEBUGMODE', False)
+
+log = logging.getLogger("transcription_logger")
+ch = logging.StreamHandler()
+loglevel = logging.WARNING
+if debugmode:
+    loglevel = logging.DEBUG
+ch.setLevel(loglevel)
+log.addHandler(ch)
+log.setLevel(loglevel)
+
+if __name__ == '__main__':
+    log.info("starting transcription service...")
+
+
 ROOT = Path(__file__).parent
 WEBSERVER = Path(__file__).parent.parent
-
 
 vosk_model_path = os.environ.get('VOSK_MODEL_PATH', '../../models/vosk-model-en-us-0.22')
 vosk_cert_file = os.environ.get('VOSK_CERT_FILE', None)
@@ -40,20 +56,6 @@ dump_fd = None if dump_file is None else open(dump_file, "wb")
 # dict[str: Room]
 rooms: dict = {}
 
-class Log:
-    lastPrint = "info"
-    @classmethod
-    def printInfo(cls, error):
-        if cls.lastPrint != "info":
-            print("----- Info -----")
-        print(error)
-        cls.lastPrint = "info"
-    @classmethod
-    def printError(cls, error):
-        if cls.lastPrint != "error":
-            print("----- Error -----")
-        print(error)
-        cls.lastPrint = "error"
 
 
 # send a request to the libretranslate service
@@ -159,7 +161,7 @@ class KaldiTask: # transcription
 async def join(request):
     params = await request.json()
 
-    Log.printInfo("Received join request")
+    log.info("Received join request")
 
     roomid = request.rel_url.query['room']
     if not roomid in rooms.keys():
@@ -213,7 +215,7 @@ async def join(request):
 async def create(request):
     params = await request.json()
 
-    Log.printInfo("Received create request")
+    log.info("Received create request")
 
     language = params["language"]
 
@@ -318,7 +320,7 @@ class Room:
                 elif text != None and text != "":
                     # translate text
                     translated = json.dumps({"text": translate(q = text, source = language, target = user.getLanguage(), timeout = 250)})
-                Log.printInfo("sending to: " + user.getLanguage() + " translated: '" + str(translated) + "' type: " + str(type(translated)))
+                log.info("sending to: " + user.getLanguage() + "; translated: '" + str(translated) + "'")
                 # send to user
                 user.getDataChannel().send(translated)
             except:
@@ -358,10 +360,10 @@ class User:
 # deprecated
 #
 async def websocket_handler(request):
-    Log.printInfo('Websocket connection starting')
+    log.info('Websocket connection starting')
     ws = aiohttp.web.WebSocketResponse()
     await ws.prepare(request)
-    Log.printInfo('Websocket connection ready')
+    log.info('Websocket connection ready')
 
     roomID = request.rel_url.query['roomid']
     
@@ -376,23 +378,23 @@ async def websocket_handler(request):
     async for msg in ws:
         data = json.loads(msg.data)
         if msg.type == aiohttp.WSMsgType.TEXT:
-            Log.printInfo("received over websocket: " + json.dumps(data))
+            log.info("received over websocket: " + json.dumps(data))
             if validRequest or data["action"] == "join":    
                 match data["action"]:
                     case "join":
                         room.getUsers().append(data["username"])
-                        Log.printInfo("Received join request from " + data["username"] + " to room: " + room.getName())
+                        log.info("Received join request from " + data["username"] + " to room: " + room.getName())
                     case "close":
                         validClose = True
                         await ws.close()
                     case "echo":
                         await ws.send_str(json.dumps(data) + '/answer')
-                    case _: Log.printError("Websocket error: action not found")
+                    case _: log.warning("Websocket error: action not found")
     
     if validClose:
-        Log.printInfo("Websocket connection closed")
+        log.info("Websocket connection closed")
     else:
-        Log.printError("Websocket connection lost")
+        log.warning("Websocket connection lost")
 
     return ws
 
