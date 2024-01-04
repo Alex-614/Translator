@@ -3,7 +3,6 @@ package UserService.logic;
 import UserService.logic.Entities.User;
 import UserService.logic.Respositories.UserRepository;
 import org.hibernate.exception.ConstraintViolationException;
-import org.postgresql.util.PSQLException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
