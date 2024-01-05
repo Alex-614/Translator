@@ -12,13 +12,13 @@ from pathlib import Path
 from vosk import KaldiRecognizer, Model
 from aiohttp import web
 import aiohttp
-from aiohttp.web_exceptions import HTTPServiceUnavailable
 from aiortc import RTCSessionDescription, RTCPeerConnection
 from av.audio.resampler import AudioResampler
 
 import random, aiohttp_cors
-from websockets.server import serve
 from urllib import request, parse
+
+from websockets.server import serve
 
 
 debugmode = os.environ.get('TRANSCRIPTION_DEBUGMODE', False)
@@ -47,11 +47,16 @@ dump_file = os.environ.get('DUMP_FILE', None)
 
 transcription_port = int(os.environ.get('TRANSCRIPTION_PORT', 2700))
 
-translation_domain = os.environ.get('TRANSLATION_DOMAIN', '127.0.0.1:5000')
+translation_domain = str(os.environ.get('TRANSLATION_DOMAIN', '127.0.0.1:5000'))
 
 models: dict[str: Model] = {"en": Model(vosk_model_path)}
 pool = concurrent.futures.ThreadPoolExecutor((os.cpu_count() or 1))
 dump_fd = None if dump_file is None else open(dump_file, "wb")
+
+log.info("TRANSCRIPTION_PORT: " + str(transcription_port))
+log.info("TRANSLATION_DOMAIN: " + str(translation_domain))
+log.info("TRANSCRIPTION_DEBUGMODE: " + str(debugmode))
+log.info("VOSK_MODEL_PATH: " + str(vosk_model_path))
 
 # dict[str: Room]
 rooms: dict = {}
@@ -65,12 +70,13 @@ def translate(q: str, source: str = "en", target: str = "de", timeout: int | Non
     url_params = parse.urlencode(params)
     req = request.Request("http://" + translation_domain + "/translate", data=url_params.encode())
     response = request.urlopen(req, timeout = timeout)
+    log.debug("translation request sent: " + str(params))
     response_str = response.read().decode()
     return str(json.loads(response_str)["translatedText"])
 
 # send a language to the libretranslate service
 # to detext the language of the text
-# NOT USED YET
+# NOT USED / IMPLEMENTED YET
 def detect(q: str, timeout: int | None = None):
     params: dict[str, str] = {"q": q}
     url_params = parse.urlencode(params)
@@ -310,6 +316,8 @@ class Room:
         language = result.get("language")
         partial = result.get("partial")
         text = result.get("text")
+        log.debug("original text: '" + str(text) + "'")
+        log.debug("original partial: '" + str(partial) + "'")
         translated = ""
         # iterate all users
         for user in self.users:

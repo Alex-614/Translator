@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # UserServiceDB
+  user_service_db:
+    build:
+      context: ./Dockerimages/UserDBImage
+      dockerfile: Dockerfile
+    ports:
+      - "5432:5432"
+    container_name: UserServiceDB
+    networks:
+      - UserServiceNetwork
+
+  # UserService
+  user_service:
+    build:
+      context: ./UserService
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    container_name: UserService
+    networks:
+      - UserServiceNetwork
+    depends_on:
+      - user_service_db
+
+  # TextServiceDB
+  text_service_db:
+    build:
+      context: ./Dockerimages/TextDBImage
+      dockerfile: Dockerfile
+    ports:
+      - "6543:6543"
+    container_name: TextServiceDB
+    networks:
+      - TextServiceNetwork
+
+  # TextService
+  text_service:
+    build:
+      context: ./TextService
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    container_name: TextService
+    networks:
+      - TextServiceNetwork
+    depends_on:
+      - text_service_db
+
+networks:
+  UserServiceNetwork:
+    driver: bridge
+  TextServiceNetwork:
+    driver: bridge
