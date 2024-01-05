@@ -181,10 +181,6 @@ async def join(request):
     language = params["language"]
     user.setLanguage(language)
 
-    offer = RTCSessionDescription(
-        sdp=params['sdp'],
-        type=params['type'])
-
     user.setRTCPeerConnection(RTCPeerConnection())
     pc: RTCPeerConnection = user.getRTCPeerConnection()
 
@@ -199,6 +195,10 @@ async def join(request):
             room.getUsers().remove(user)
             await pc.close()
 
+
+    offer = RTCSessionDescription(
+        sdp=params['sdp'],
+        type=params['type'])
     await pc.setRemoteDescription(offer)
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
@@ -324,16 +324,19 @@ class Room:
             try:
                 if partial != None and partial != "":
                     # translate partial
-                    translated = json.dumps({"partial": translate(q = partial, source = language, target = user.getLanguage(), timeout = 250)})
+                    translated = json.dumps({"partial": translate(q = partial, source = language, target = user.getLanguage(), timeout = 100)})
                 elif text != None and text != "":
                     # translate text
-                    translated = json.dumps({"text": translate(q = text, source = language, target = user.getLanguage(), timeout = 250)})
+                    translated = json.dumps({"text": translate(q = text, source = language, target = user.getLanguage(), timeout = 100)})
                 log.info("sending to: " + user.getLanguage() + "; translated: '" + str(translated) + "'")
                 # send to user
-                user.getDataChannel().send(translated)
-            except:
-                pass
-
+                if user.getDataChannel() != None: 
+                    user.getDataChannel().send(translated)
+                else:
+                    log.debug("user datachannel == None")
+            except Exception as e:
+                log.error("error while sending: " + str(e))
+                raise
 
 #
 # class User; handles all information about connected clients
