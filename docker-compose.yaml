@@ -1,13 +1,16 @@
 version: "3.8"
 
 
+#depends_on:
+#  translation:
+#    condition: service_healthy
 
 services:
   transcription:
     container_name: transcription
     hostname: transcription
     networks:
-      - backend_network
+      - backnet
     build:
       context: ./transcription
       dockerfile: Dockerfile
@@ -19,14 +22,14 @@ services:
       - TRANSCRIPTION_DEBUGMODE=True
       - TRANSLATION_DOMAIN=translation:5000
       - TRANSCRIPTION_PORT=2700
-      - VOSK_MODEL_PATH=models/vosk-model-en-us-0.22
+      - VOSK_MODEL_PATHS={"en":"models/vosk-model-en-us-0.22","de":"models/vosk-model-de-0.21"}
 
 
   translation:
     container_name: translation
     hostname: translation
     networks:
-      - backend_network
+      - backnet
     #build:
     #  context: ./translation
     #  dockerfile: Dockerfile
@@ -38,6 +41,13 @@ services:
     ports:
       - "5000:5000"
     restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "./venv/bin/python scripts/healthcheck.py"]
+      interval: 3s
+      timeout: 5s
+      retries: 1
+      start_period: 0s
+      start_interval: 5s
     environment:
       - LT_DISABLE_FILES_TRANSLATION=true
       - LT_DISABLE_WEB_UI=true
@@ -48,7 +58,7 @@ services:
     #  - TRANSCRIPTION_DEBUGMODE=False
 
 networks:
-  backend_network:
-    name: backend_network
+  backnet:
+    name: backnet
 
 

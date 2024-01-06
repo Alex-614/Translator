@@ -12,7 +12,7 @@ from pathlib import Path
 from vosk import KaldiRecognizer, Model
 from aiohttp import web
 import aiohttp
-from aiortc import RTCSessionDescription, RTCPeerConnection
+from aiortc import RTCSessionDescription, RTCPeerConnection, RTCDataChannel
 from av.audio.resampler import AudioResampler
 
 import random, aiohttp_cors
@@ -39,28 +39,31 @@ if __name__ == '__main__':
 ROOT = Path(__file__).parent
 WEBSERVER = Path(__file__).parent.parent
 
-vosk_model_path = os.environ.get('VOSK_MODEL_PATH', '../../models/vosk-model-en-us-0.22')
+vosk_model_paths: dict[str, str] = json.loads(os.environ.get('VOSK_MODEL_PATHS', '{"en":"../../models/vosk-model-en-us-0.22"}'))
 vosk_cert_file = os.environ.get('VOSK_CERT_FILE', None)
 vosk_key_file = os.environ.get('VOSK_KEY_FILE', None)
-
+print(vosk_model_paths)
+print(type(vosk_model_paths))
 dump_file = os.environ.get('DUMP_FILE', None)
 
 transcription_port = int(os.environ.get('TRANSCRIPTION_PORT', 2700))
 
 translation_domain = str(os.environ.get('TRANSLATION_DOMAIN', '127.0.0.1:5000'))
 
-models: dict[str: Model] = {"en": Model(vosk_model_path)}
+models: dict[str: Model] = {}
+for model in vosk_model_paths.keys():
+    models[model] = Model(vosk_model_paths.get(model))
 pool = concurrent.futures.ThreadPoolExecutor((os.cpu_count() or 1))
 dump_fd = None if dump_file is None else open(dump_file, "wb")
-
-log.info("TRANSCRIPTION_PORT: " + str(transcription_port))
-log.info("TRANSLATION_DOMAIN: " + str(translation_domain))
-log.info("TRANSCRIPTION_DEBUGMODE: " + str(debugmode))
-log.info("VOSK_MODEL_PATH: " + str(vosk_model_path))
 
 # dict[str: Room]
 rooms: dict = {}
 
+
+log.info("TRANSCRIPTION_PORT: " + str(transcription_port))
+log.info("TRANSLATION_DOMAIN: " + str(translation_domain))
+log.info("TRANSCRIPTION_DEBUGMODE: " + str(debugmode))
+log.info("VOSK_MODEL_PATH: " + str(vosk_model_paths))
 
 
 # send a request to the libretranslate service
@@ -174,7 +177,7 @@ async def join(request):
         return web.Response(
             content_type='application/json',
             text='{"error": "room not found"}')
-    room = rooms.get(roomid)
+    room: Room = rooms.get(roomid)
 
     user: User = User()
     room.getUsers().append(user)
@@ -192,8 +195,14 @@ async def join(request):
     @pc.on('iceconnectionstatechange')
     async def on_iceconnectionstatechange():
         if pc.iceConnectionState == 'failed':
+            print("------------------------------")
+            print(str(len(room.getUsers())))
+            print("------------------------------")
             room.getUsers().remove(user)
-            await pc.close()
+            print("------------------------------")
+            print(str(len(room.getUsers())))
+            print("------------------------------")
+            await user.disconnect()
 
 
     offer = RTCSessionDescription(
@@ -306,9 +315,8 @@ class Room:
     # close the room
     # closes all connections and deletes the data on memory
     async def close(self):
-        await self.task.stop()
-        for user in  self.users:
-            await user.getRTCPeerConnection().close()
+        for user in self.users:
+            await user.disconnect()
         rooms.pop(self.id)
 
     # broadcast
@@ -322,21 +330,21 @@ class Room:
         # iterate all users
         for user in self.users:
             try:
-                if partial != None and partial != "":
-                    # translate partial
-                    translated = json.dumps({"partial": translate(q = partial, source = language, target = user.getLanguage(), timeout = 100)})
-                elif text != None and text != "":
-                    # translate text
-                    translated = json.dumps({"text": translate(q = text, source = language, target = user.getLanguage(), timeout = 100)})
-                log.info("sending to: " + user.getLanguage() + "; translated: '" + str(translated) + "'")
-                # send to user
-                if user.getDataChannel() != None: 
-                    user.getDataChannel().send(translated)
-                else:
-                    log.debug("user datachannel == None")
+                if not "closed" in user.getDataChannel().readyState:
+                    if partial != None and partial != "":
+                        # translate partial
+                        translated = json.dumps({"partial": translate(q = partial, source = language, target = user.getLanguage(), timeout = 100)})
+                    elif text != None and text != "":
+                        # translate text
+                        translated = json.dumps({"text": translate(q = text, source = language, target = user.getLanguage(), timeout = 100)})
+                    log.info("sending to: " + user.getLanguage() + "; translated: '" + str(translated) + "'")
+                    # send to user
+                    if user.getDataChannel() != None:
+                        user.getDataChannel().send(translated)
+                    else:
+                        log.debug("user datachannel == None")
             except Exception as e:
                 log.error("error while sending: " + str(e))
-                raise
 
 #
 # class User; handles all information about connected clients
@@ -346,9 +354,9 @@ class Room:
 class User:
 
     def __init__(self):
-        self.rtcPeerConnection = None
-        self.language = "en"
-        self.channel = None
+        self.rtcPeerConnection: RTCPeerConnection = None
+        self.language: str = "en"
+        self.channel: RTCDataChannel = None
 
     def getRTCPeerConnection(self):
         return self.rtcPeerConnection
@@ -366,6 +374,9 @@ class User:
     def getDataChannel(self):
         return self.channel
 
+    async def disconnect(self):
+        self.channel.close()
+        await self.rtcPeerConnection.close()
 
 #
 # deprecated
