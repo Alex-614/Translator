@@ -19,10 +19,10 @@ log.info("starting translation service...")
 
 async def doTranslate(request):
     params = await request.post()
-    log.debug("received translate request: q='" + params.get("q") + "' source='" + params.get("source") + "' target='" + params.get("target") + "'")
+    log.debug("received translate request: q='" + str(params.get("q")) + "' source='" + str(params.get("source")) + "' target='" + str(params.get("target")) + "'")
     #{"q": q, "source": source, "target": target}
     translator = translate.Translator(from_lang = params.get("source"), to_lang = params.get("target"))
-    translated = translator.translate(params.get("q"))
+    translated = str(translator.translate(params.get("q")))
     log.debug("translated: " + translated)
     return web.Response(
             content_type='application/json',
