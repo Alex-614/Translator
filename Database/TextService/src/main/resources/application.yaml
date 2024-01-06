@@ -3,6 +3,6 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://TextServiceDB:6543/textdb
+    url: jdbc:postgresql://TextServiceDBLeader:6543/textdb_leader
     username: postgres
     password: postgres
