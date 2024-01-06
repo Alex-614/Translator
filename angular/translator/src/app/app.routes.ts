@@ -1,10 +1,11 @@
-import { Routes } from '@angular/router';
+import { Routes, CanActivate } from '@angular/router';
 import { AccountComponent } from './account/account.component';
 import { HomeComponent } from './home/home.component';
 import { LoginComponent } from './login/login.component';
 import { RegisterComponent } from './register/register.component';
 import { SessionComponent } from './session/session.component';
 import { SessionhostComponent } from './sessionhost/sessionhost.component';
+import { AuthGuardService as AuthGuard } from './auth-guard.service';
 
 export const routes: Routes = [
     {
@@ -25,7 +26,7 @@ export const routes: Routes = [
     {
         path: 'login/account',
         component: AccountComponent,
-        title: 'Account'
+        title: 'Account',
     },
     {
         path: 'login/register',
@@ -35,6 +36,9 @@ export const routes: Routes = [
     {
         path: 'login/account/sessionhost',
         component: SessionhostComponent,
-        title: 'Session Host'
+        title: 'Session Host',
+    },
+    {
+        path: '**', redirectTo:''
     }
 ];
