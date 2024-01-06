@@ -176,6 +176,10 @@ function join() {
         }
     };
 
+    dc.onerror = function (error) {
+        console.log(error);
+    };
+
     pc.oniceconnectionstatechange = function () {
         if (pc.iceConnectionState == 'disconnected') {
             console.log('Disconnected');

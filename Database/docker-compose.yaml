@@ -25,16 +25,30 @@ services:
     depends_on:
       - user_service_db
 
-  # TextServiceDB
-  text_service_db:
+  # TextServiceDB Leader
+  text_service_db_leader:
     build:
-      context: ./Dockerimages/TextDBImage
-      dockerfile: Dockerfile
+      context: Dockerimages/TextDBImage/Leader
+      dockerfile: Leader.Dockerfile
     ports:
       - "6543:6543"
-    container_name: TextServiceDB
+    container_name: TextServiceDBLeader
     networks:
       - TextServiceNetwork
+
+  # TextServiceDB Follower
+  text_service_db_follower:
+    build:
+      context: Dockerimages/TextDBImage/Follower
+      dockerfile: Follower.Dockerfile
+    ports:
+     - "6544:6544"
+    container_name: TextServiceDBFollower
+    networks:
+      - TextServiceNetwork
+    depends_on:
+      text_service_db_leader:
+        condition: service_started
 
   # TextService
   text_service:
@@ -47,7 +61,7 @@ services:
     networks:
       - TextServiceNetwork
     depends_on:
-      - text_service_db
+      - text_service_db_leader
 
 networks:
   UserServiceNetwork:

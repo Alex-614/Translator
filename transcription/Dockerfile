@@ -11,6 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 RUN mkdir models
 ADD https://alphacephei.com/vosk/models/vosk-model-en-us-0.22.zip models
+ADD https://alphacephei.com/vosk/models/vosk-model-de-0.21.zip models
 #RUN unzip models/vosk-model-en-us-0.22.zip -d models
 
 EXPOSE 2700
