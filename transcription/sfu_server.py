@@ -110,8 +110,6 @@ class ServerBuilder:
         return self.rooms
 
 
-
-
 class Server:
 
     def loadBuilder(self, builder: ServerBuilder):
@@ -239,7 +237,12 @@ class Server:
             sdp=params['sdp'],
             type=params['type'])
         
-        room: Room = Room(translator = self.translator, logger = self.log, kaldiTask = self.transcriber.newTask(language))
+        roomid = Room.generateID()
+        while self.redis_db.sismember("room", roomid):
+            roomid = Room.generateID()
+
+        room: Room = Room(translator = self.translator, logger = self.log, kaldiTask = self.transcriber.newTask(language), id = roomid)
+        self.redis_db.sadd("room", roomid)
         self.rooms[room.getID()] = room
 
         user: User = User()

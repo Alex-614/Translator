@@ -10,24 +10,17 @@ from translation import Translator
 
 class Room:
 
-    keys: list[str] = []
-
     # generate a new room id
     @classmethod
     def generateID(cls):
         # list of chars to generate the id from
         chars:list[str] = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","0","1","2","3","4","5","6","7","8","9"]
         random.shuffle(chars)
-        id = "".join(chars[0:5])
-        while id in cls.keys:
-            random.shuffle(chars)
-            id = "".join(chars[0:5])
-        return id
-
-    def __init__(self, translator, logger, kaldiTask: KaldiTask):
+        return "".join(chars[0:5])
+    
+    def __init__(self, translator, logger, kaldiTask: KaldiTask, id: str = None):
         self.log = logger
-        self.id: str = Room.generateID()
-        Room.keys.append(self.id)
+        self.id: str = Room.generateID() if id == None else id
         self.users: list[User] = []
         self.task: KaldiTask = kaldiTask
         self.translator: Translator = translator
@@ -46,7 +39,6 @@ class Room:
     async def close(self):
         for user in self.users:
             await user.disconnect()
-        Room.keys.remove(self.getID())
 
     # broadcast
     def broadcast(self, result: dict[str, str]):
