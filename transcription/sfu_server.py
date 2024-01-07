@@ -2,454 +2,336 @@
 
 import json
 import ssl
-import sys
 import os
-import concurrent.futures
-import asyncio
 import logging
 
-from pathlib import Path
-from vosk import KaldiRecognizer, Model
 from aiohttp import web
 import aiohttp
-from aiortc import RTCSessionDescription, RTCPeerConnection, RTCDataChannel
-from av.audio.resampler import AudioResampler
+from aiortc import RTCSessionDescription, RTCPeerConnection
 
-import random, aiohttp_cors
-from urllib import request, parse
+import aiohttp_cors
+
+import redis
 
 from websockets.server import serve
 
+from data import Room, User
+from transcriber import Transcriber
+from translation import Translator
 
-debugmode = os.environ.get('TRANSCRIPTION_DEBUGMODE', False)
+class ServerBuilder:
 
-log = logging.getLogger("transcription_logger")
-ch = logging.StreamHandler()
-loglevel = logging.WARNING
-if debugmode:
-    loglevel = logging.DEBUG
-ch.setLevel(loglevel)
-log.addHandler(ch)
-log.setLevel(loglevel)
-
-if __name__ == '__main__':
-    log.info("starting transcription service...")
-
-
-ROOT = Path(__file__).parent
-WEBSERVER = Path(__file__).parent.parent
-
-vosk_model_paths: dict[str, str] = json.loads(os.environ.get('VOSK_MODEL_PATHS', '{"en":"../../models/vosk-model-en-us-0.22"}'))
-vosk_cert_file = os.environ.get('VOSK_CERT_FILE', None)
-vosk_key_file = os.environ.get('VOSK_KEY_FILE', None)
-print(vosk_model_paths)
-print(type(vosk_model_paths))
-dump_file = os.environ.get('DUMP_FILE', None)
-
-transcription_port = int(os.environ.get('TRANSCRIPTION_PORT', 2700))
-
-translation_domain = str(os.environ.get('TRANSLATION_DOMAIN', '127.0.0.1:5000'))
-
-models: dict[str: Model] = {}
-for model in vosk_model_paths.keys():
-    models[model] = Model(vosk_model_paths.get(model))
-pool = concurrent.futures.ThreadPoolExecutor((os.cpu_count() or 1))
-dump_fd = None if dump_file is None else open(dump_file, "wb")
-
-# dict[str: Room]
-rooms: dict = {}
-
-
-log.info("TRANSCRIPTION_PORT: " + str(transcription_port))
-log.info("TRANSLATION_DOMAIN: " + str(translation_domain))
-log.info("TRANSCRIPTION_DEBUGMODE: " + str(debugmode))
-log.info("VOSK_MODEL_PATH: " + str(vosk_model_paths))
-
-
-# send a request to the libretranslate service
-# to translate a text q from language source to language target
-def translate(q: str, source: str = "en", target: str = "de", timeout: int | None = None):
-    params: dict[str, str] = {"q": q, "source": source, "target": target}
-    url_params = parse.urlencode(params)
-    req = request.Request("http://" + translation_domain + "/translate", data=url_params.encode())
-    response = request.urlopen(req, timeout = timeout)
-    log.debug("translation request sent: " + str(params))
-    response_str = response.read().decode()
-    return str(json.loads(response_str)["translatedText"])
-
-# send a language to the libretranslate service
-# to detext the language of the text
-# NOT USED / IMPLEMENTED YET
-def detect(q: str, timeout: int | None = None):
-    params: dict[str, str] = {"q": q}
-    url_params = parse.urlencode(params)
-    req = request.Request("http://" + translation_domain + "/detect", data=url_params.encode())
-    response = request.urlopen(req, timeout = timeout)
-    response_str = response.read().decode()
-    return json.loads(response_str)
-
-# transcribe the audio
-def process_chunk(rec, message):
-    try:
-        res = rec.AcceptWaveform(message)
-    except Exception:
-        result = None
-    else:
-        if res > 0:
-            result = rec.Result()
-        else:
-            result = rec.PartialResult()
-    return result
-
-#
-# KaldiTask manages the transcription of a audio stream and calls onSend whenever a part is transcribed
-#
-# the model is selected from models (preloaded vosk AI models)
-# currently only the english model
-#
-class KaldiTask: # transcription
     def __init__(self):
-        self.__resampler = AudioResampler(format='s16', layout='mono', rate=48000)
-        self.__audio_task = None
-        self.__track = None
-        self.language = "en"
-        self.__recognizer = KaldiRecognizer(models[self.language], 48000)
-        self.__onSend = lambda: None
+        self.debugmode = None
+        self.log = None
+        self.redis_host = None
+        self.redis_port = None
+        self.redis_db = None
+        self.vosk_model_paths = None
+        self.vosk_cert_file = None
+        self.vosk_key_file = None
+        self.dump_file = None
+        self.transcription_port = None
+        self.translation_host = None
+        self.translation_port = None
+        self.transcriber = None
+        self.rooms = {}
 
-    async def set_audio_track(self, track):
-        self.__track = track
-
-    async def start(self):
-        self.__audio_task = asyncio.create_task(self.__run_audio_xfer())
-
-    async def stop(self):
-        if self.__audio_task is not None:
-            self.__audio_task.cancel()
-            self.__audio_task = None
-
-    async def __run_audio_xfer(self):
-        loop = asyncio.get_running_loop()
-
-        max_frames = 20
-        frames = []
-        while True:
-            fr = await self.__track.recv()
-            frames.append(fr)
-
-            # collect frames to not send partial results too often
-            if len(frames) < max_frames:
-               continue
-
-            dataframes = bytearray(b'')
-            for fr in frames:
-                for rfr in self.__resampler.resample(fr):
-                    dataframes += bytes(rfr.planes[0])[:rfr.samples * 2]
-            frames.clear()
-
-            if dump_fd != None:
-                dump_fd.write(bytes(dataframes))
-
-            result = await loop.run_in_executor(pool, process_chunk, self.__recognizer, bytes(dataframes))
-            result: dict[str, str] = json.loads(result)
-            result["language"] = self.language
-            self.__onSend(result)
+    def build(self):
+        self.__buildTranscriber()
+        self.__buildTranslator()
+        self.__buildRedisDB()
+        return Server(self)
     
-    def setOnSend(self, do):
-        self.__onSend = do
- 
-#
-# join a existing room
-# the request should contain the roomid, of the room the user wants to join and the language, the transribed text will be translated to
-# besides the request should contain the webRTC connection offer ('sdp' & 'type')
-# 
-# a user object is initialized and added to the list of users in the room object
-#
-# the response is the webRTC answer
-# the connection consists of the datachannel to send the transcribed text translated to the language the user selected 
-#
-async def join(request):
-    params = await request.json()
+    def __buildTranscriber(self):
+        self.transcriber = Transcriber(self.vosk_model_paths, self.dump_file)
+    def getTranscriber(self):
+        return self.transcriber
+    
+    def __buildTranslator(self):
+        self.translator = Translator(self.log, self.translation_host, self.translation_port)
+    def getTranslator(self):
+        return self.translator
+    
+    def __buildRedisDB(self):
+        self.redis_db = redis.Redis(self.redis_host, self.redis_port)
+    def getRedisDB(self):
+        return self.redis_db
 
-    log.info("Received join request")
+    def setPort(self, port):
+        self.port = port
 
-    roomid = request.rel_url.query['room']
-    if not roomid in rooms.keys():
+    def setDebugmode(self, value):
+        self.debugmode = value
+    def setLogger(self, value):
+        self.log = value
+    def setRedisHost(self, host):
+        self.redis_host = host
+    def setRedisPort(self, port):
+        self.redis_port = port
+    def setVoskModelPaths(self, value):
+        self.vosk_model_paths = value
+    def setVoskCertFile(self, value):
+        self.vosk_cert_file = value
+    def setVoskKeyFile(self, value):
+        self.vosk_key_file = value
+    def setDumpfile(self, value):
+        self.dump_file = value
+    def setTranslatorHost(self, host):
+        self.translation_host = host
+    def setTranslatorPort(self, port):
+        self.translation_port = port
+
+    def getPort(self):
+        return self.port
+
+    def getDebugmode(self):
+        return self.debugmode
+    def getLogger(self):
+        return self.log
+    def getRedisHost(self):
+        return self.redis_host
+    def getRedisPort(self):
+        return self.redis_port
+    def getVoskModelPaths(self):
+        return self.vosk_model_paths
+    def getVoskCertFile(self):
+        return self.vosk_cert_file
+    def getVoskKeyFile(self):
+        return self.vosk_key_file
+    def getDumpfile(self):
+        return self.dump_file
+    def getTranslatorHost(self):
+        return self.translation_host
+    def getTranslatorPort(self):
+        return self.translation_port
+
+    def getRooms(self):
+        return self.rooms
+
+
+
+
+class Server:
+
+    def loadBuilder(self, builder: ServerBuilder):
+        self.port = builder.getPort()
+        self.debugmode = builder.getDebugmode()
+        self.log = builder.getLogger()
+        self.redis_host = builder.getRedisHost()
+        self.redis_port = builder.getRedisPort()
+        self.redis_db = builder.getRedisDB()
+        self.vosk_model_paths = builder.getVoskModelPaths()
+        self.vosk_cert_file = builder.getVoskCertFile()
+        self.vosk_key_file = builder.getVoskKeyFile()
+        self.dumpfile = builder.getDumpfile()
+        self.translator_host = builder.getTranslatorHost()
+        self.translator_port = builder.getTranslatorPort()
+        self.translator = builder.getTranslator()
+        self.transcriber = builder.getTranscriber()
+        self.rooms = builder.getRooms()
+
+    def __init__(self, builder: ServerBuilder):
+        self.loadBuilder(builder)
+
+        self.log.info("starting transcription service...")
+
+        if self.vosk_cert_file:
+            ssl_context = ssl.SSLContext()
+            ssl_context.load_cert_chain(self.vosk_cert_file, self.vosk_key_file)
+        else:
+            ssl_context = None
+
+        app = web.Application()
+
+        app._router.add_post("/join", self.join)
+        app._router.add_post("/create", self.create)
+
+        # websocket (deprecated)
+        #app._router.add_get("/ws", websocket_handler)
+
+        cors = aiohttp_cors.setup(app, defaults={
+        "*": aiohttp_cors.ResourceOptions(
+                allow_credentials=True,
+                expose_headers="*",
+                allow_headers="*"
+            )
+        })
+
+        for route in list(app.router.routes()):
+            cors.add(route)
+        
+        web.run_app(app, port=self.port, ssl_context=ssl_context)
+
+
+    #
+    # join a existing room
+    # the request should contain the roomid, of the room the user wants to join and the language, the transribed text will be translated to
+    # besides the request should contain the webRTC connection offer ('sdp' & 'type')
+    # 
+    # a user object is initialized and added to the list of users in the room object
+    #
+    # the response is the webRTC answer
+    # the connection consists of the datachannel to send the transcribed text translated to the language the user selected 
+    #
+    async def join(self, request):
+        params = await request.json()
+
+        self.log.info("Received join request")
+
+        roomid = request.rel_url.query['room']
+        if not roomid in self.rooms.keys():
+            return web.Response(
+                content_type='application/json',
+                text='{"error": "room not found"}')
+        room: Room = self.rooms.get(roomid)
+
+        user: User = User()
+        room.getUsers().append(user)
+        language = params["language"]
+        user.setLanguage(language)
+
+        user.setRTCPeerConnection(RTCPeerConnection())
+        pc: RTCPeerConnection = user.getRTCPeerConnection()
+
+        @pc.on('datachannel')
+        async def on_datachannel(channel):
+            channel.send('{}') # Dummy message to make the UI change to "Recieiving"
+            user.setDataChannel(channel)
+
+        @pc.on('iceconnectionstatechange')
+        async def on_iceconnectionstatechange():
+            if pc.iceConnectionState == 'failed':
+                room.getUsers().remove(user)
+                await user.disconnect()
+
+
+        offer = RTCSessionDescription(
+            sdp=params['sdp'],
+            type=params['type'])
+        await pc.setRemoteDescription(offer)
+        answer = await pc.createAnswer()
+        await pc.setLocalDescription(answer)
+
         return web.Response(
             content_type='application/json',
-            text='{"error": "room not found"}')
-    room: Room = rooms.get(roomid)
+            text=json.dumps({
+                'sdp': pc.localDescription.sdp,
+                'type': pc.localDescription.type
+            }))
 
-    user: User = User()
-    room.getUsers().append(user)
-    language = params["language"]
-    user.setLanguage(language)
+    #
+    # create a new room
+    # the request should contain the language the room leader speaks in and the webRTC peer connection offer ('sdp' & 'type')
+    # a room object is with a new generated ID is initialized
+    # the response contains the webRTC connection answer and the roomid
+    #
+    # the webRTC connection consists of the audio track for sending the speech of the user and a datachannel for sending the transcription (same language as spoken)
+    # 
+    async def create(self, request):
+        params = await request.json()
 
-    user.setRTCPeerConnection(RTCPeerConnection())
-    pc: RTCPeerConnection = user.getRTCPeerConnection()
+        self.log.info("Received create request")
 
-    @pc.on('datachannel')
-    async def on_datachannel(channel):
-        channel.send('{}') # Dummy message to make the UI change to "Recieiving"
-        user.setDataChannel(channel)
+        language = params["language"]
 
-    @pc.on('iceconnectionstatechange')
-    async def on_iceconnectionstatechange():
-        if pc.iceConnectionState == 'failed':
-            print("------------------------------")
-            print(str(len(room.getUsers())))
-            print("------------------------------")
-            room.getUsers().remove(user)
-            print("------------------------------")
-            print(str(len(room.getUsers())))
-            print("------------------------------")
-            await user.disconnect()
+        offer = RTCSessionDescription(
+            sdp=params['sdp'],
+            type=params['type'])
+        
+        room: Room = Room(translator = self.translator, logger = self.log, kaldiTask = self.transcriber.newTask(language))
+        self.rooms[room.getID()] = room
 
+        user: User = User()
+        room.getUsers().append(user)
+        user.setLanguage(language)
+        user.setRTCPeerConnection(RTCPeerConnection())
+        pc: RTCPeerConnection = user.getRTCPeerConnection()
+        
+        kaldi = room.getTask()
+        kaldi.setOnSend(room.broadcast)
 
-    offer = RTCSessionDescription(
-        sdp=params['sdp'],
-        type=params['type'])
-    await pc.setRemoteDescription(offer)
-    answer = await pc.createAnswer()
-    await pc.setLocalDescription(answer)
+        @pc.on('datachannel')
+        async def on_datachannel(channel):
+            channel.send('{}') # Dummy message to make the UI change to "Listening"
+            user.setDataChannel(channel)
+            await kaldi.start()
 
-    return web.Response(
-        content_type='application/json',
-        text=json.dumps({
-            'sdp': pc.localDescription.sdp,
-            'type': pc.localDescription.type
-        }))
+        @pc.on('iceconnectionstatechange')
+        async def on_iceconnectionstatechange():
+            if pc.iceConnectionState == 'failed':
+                await room.close()
+                self.rooms.pop(room.id)
+                await pc.close()
 
-#
-# create a new room
-# the request should contain the language the room leader speaks in and the webRTC peer connection offer ('sdp' & 'type')
-# a room object is with a new generated ID is initialized
-# the response contains the webRTC connection answer and the roomid
-#
-# the webRTC connection consists of the audio track for sending the speech of the user and a datachannel for sending the transcription (same language as spoken)
-# 
-async def create(request):
-    params = await request.json()
+        @pc.on('track')
+        async def on_track(track):
+            if track.kind == 'audio':
+                await kaldi.set_audio_track(track)
 
-    log.info("Received create request")
+            @track.on('ended')
+            async def on_ended():
+                await kaldi.stop()
 
-    language = params["language"]
+        await pc.setRemoteDescription(offer)
+        answer = await pc.createAnswer()
+        await pc.setLocalDescription(answer)
 
-    offer = RTCSessionDescription(
-        sdp=params['sdp'],
-        type=params['type'])
-    
-    room: Room = Room()
-    rooms[room.getID()] = room
-
-    user: User = User()
-    room.getUsers().append(user)
-    user.setLanguage(language)
-    user.setRTCPeerConnection(RTCPeerConnection())
-    pc: RTCPeerConnection = user.getRTCPeerConnection()
-    
-    kaldi = room.getTask()
-    kaldi.setOnSend(room.sendToUsers)
-
-    @pc.on('datachannel')
-    async def on_datachannel(channel):
-        channel.send('{}') # Dummy message to make the UI change to "Listening"
-        user.setDataChannel(channel)
-        await kaldi.start()
-
-    @pc.on('iceconnectionstatechange')
-    async def on_iceconnectionstatechange():
-        if pc.iceConnectionState == 'failed':
-            await room.close()
-            await pc.close()
-
-    @pc.on('track')
-    async def on_track(track):
-        if track.kind == 'audio':
-            await kaldi.set_audio_track(track)
-
-        @track.on('ended')
-        async def on_ended():
-            await kaldi.stop()
-
-    await pc.setRemoteDescription(offer)
-    answer = await pc.createAnswer()
-    await pc.setLocalDescription(answer)
-
-    return web.Response(
-        content_type='application/json',
-        text=json.dumps({
-            'sdp': pc.localDescription.sdp,
-            'type': pc.localDescription.type,
-            'roomid': room.getID()
-        }))
+        return web.Response(
+            content_type='application/json',
+            text=json.dumps({
+                'sdp': pc.localDescription.sdp,
+                'type': pc.localDescription.type,
+                'roomid': room.getID()
+            }))
 
 
-class Room:
 
-    # generate a new room id
-    @classmethod
-    def generateID(cls):
-        # list of chars to generate the id from
-        chars:list[str] = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","0","1","2","3","4","5","6","7","8","9"]
-        random.shuffle(chars)
-        id = "".join(chars[0:5])
-        while id in rooms.keys():
-            random.shuffle(chars)
-            id = "".join(chars[0:5])
-        return id
+    #
+    # deprecated
+    # NOT USED
+    #
+    async def websocket_handler(self, request):
+        self.log.info('Websocket connection starting')
+        ws = aiohttp.web.WebSocketResponse()
+        await ws.prepare(request)
+        self.log.info('Websocket connection ready')
 
-    def __init__(self):
-        self.id: str = Room.generateID()
-        self.users: list[User] = []
-        self.task: KaldiTask = KaldiTask()
+        roomID = request.rel_url.query['roomid']
+        
+        if not roomID in self.rooms.keys():
+            await ws.close()
+            return ws
 
-    def getID(self):
-        return self.id
-    
-    def getUsers(self):
-        return self.users
-    
-    def getTask(self):
-        return self.task
+        room = self.rooms.get(roomID)
 
-    # close the room
-    # closes all connections and deletes the data on memory
-    async def close(self):
-        for user in self.users:
-            await user.disconnect()
-        rooms.pop(self.id)
+        validClose = False
+        validRequest = False
+        async for msg in ws:
+            data = json.loads(msg.data)
+            if msg.type == aiohttp.WSMsgType.TEXT:
+                self.log.info("received over websocket: " + json.dumps(data))
+                if validRequest or data["action"] == "join":    
+                    match data["action"]:
+                        case "join":
+                            room.getUsers().append(data["username"])
+                            self.log.info("Received join request from " + data["username"] + " to room: " + room.getName())
+                        case "close":
+                            validClose = True
+                            await ws.close()
+                        case "echo":
+                            await ws.send_str(json.dumps(data) + '/answer')
+                        case _: self.log.warning("Websocket error: action not found")
+        
+        if validClose:
+            self.log.info("Websocket connection closed")
+        else:
+            self.log.warning("Websocket connection lost")
 
-    # broadcast
-    def sendToUsers(self, result: dict[str, str]):
-        language = result.get("language")
-        partial = result.get("partial")
-        text = result.get("text")
-        log.debug("original text: '" + str(text) + "'")
-        log.debug("original partial: '" + str(partial) + "'")
-        translated = ""
-        # iterate all users
-        for user in self.users:
-            try:
-                if not "closed" in user.getDataChannel().readyState:
-                    if partial != None and partial != "":
-                        # translate partial
-                        translated = json.dumps({"partial": translate(q = partial, source = language, target = user.getLanguage(), timeout = 100)})
-                    elif text != None and text != "":
-                        # translate text
-                        translated = json.dumps({"text": translate(q = text, source = language, target = user.getLanguage(), timeout = 100)})
-                    log.info("sending to: " + user.getLanguage() + "; translated: '" + str(translated) + "'")
-                    # send to user
-                    if user.getDataChannel() != None:
-                        user.getDataChannel().send(translated)
-                    else:
-                        log.debug("user datachannel == None")
-            except Exception as e:
-                log.error("error while sending: " + str(e))
-
-#
-# class User; handles all information about connected clients
-# contains the webRTC connection and its datachannel to send the text
-# the language determines the language the user speeks in, or to translate the text to
-#
-class User:
-
-    def __init__(self):
-        self.rtcPeerConnection: RTCPeerConnection = None
-        self.language: str = "en"
-        self.channel: RTCDataChannel = None
-
-    def getRTCPeerConnection(self):
-        return self.rtcPeerConnection
-
-    def setRTCPeerConnection(self, connection: RTCPeerConnection):
-        self.rtcPeerConnection = connection
-
-    def getLanguage(self):
-        return self.language
-    def setLanguage(self, language):
-        self.language = language
-    
-    def setDataChannel(self, channel):
-        self.channel = channel
-    def getDataChannel(self):
-        return self.channel
-
-    async def disconnect(self):
-        self.channel.close()
-        await self.rtcPeerConnection.close()
-
-#
-# deprecated
-#
-async def websocket_handler(request):
-    log.info('Websocket connection starting')
-    ws = aiohttp.web.WebSocketResponse()
-    await ws.prepare(request)
-    log.info('Websocket connection ready')
-
-    roomID = request.rel_url.query['roomid']
-    
-    if not roomID in rooms.keys():
-        await ws.close()
         return ws
 
-    room = rooms.get(roomID)
-
-    validClose = False
-    validRequest = False
-    async for msg in ws:
-        data = json.loads(msg.data)
-        if msg.type == aiohttp.WSMsgType.TEXT:
-            log.info("received over websocket: " + json.dumps(data))
-            if validRequest or data["action"] == "join":    
-                match data["action"]:
-                    case "join":
-                        room.getUsers().append(data["username"])
-                        log.info("Received join request from " + data["username"] + " to room: " + room.getName())
-                    case "close":
-                        validClose = True
-                        await ws.close()
-                    case "echo":
-                        await ws.send_str(json.dumps(data) + '/answer')
-                    case _: log.warning("Websocket error: action not found")
-    
-    if validClose:
-        log.info("Websocket connection closed")
-    else:
-        log.warning("Websocket connection lost")
-
-    return ws
 
 
-
-if __name__ == '__main__':
-
-    if vosk_cert_file:
-        ssl_context = ssl.SSLContext()
-        ssl_context.load_cert_chain(vosk_cert_file, vosk_key_file)
-    else:
-        ssl_context = None
-
-    app = web.Application()
-
-    app._router.add_post("/join", join)
-    app._router.add_post("/create", create)
-
-    # websocket (deprecated)
-    #app._router.add_get("/ws", websocket_handler)
-
-    cors = aiohttp_cors.setup(app, defaults={
-    "*": aiohttp_cors.ResourceOptions(
-            allow_credentials=True,
-            expose_headers="*",
-            allow_headers="*"
-        )
-    })
-
-    for route in list(app.router.routes()):
-        cors.add(route)
-    
-    web.run_app(app, port=transcription_port, ssl_context=ssl_context)
 
 
 

@@ -3,9 +3,10 @@
 FROM libretranslate/libretranslate
 WORKDIR /app
 
+COPY start.sh ./
 
 EXPOSE 5000
-ENTRYPOINT [ "./venv/bin/libretranslate", "--host", "0.0.0.0" ]
+ENTRYPOINT ["./start.sh"]
 
 
 
