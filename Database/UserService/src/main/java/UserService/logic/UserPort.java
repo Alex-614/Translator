@@ -3,7 +3,6 @@ package UserService.logic;
 import UserService.logic.Entities.User;
 import UserService.logic.Exceptions.DatabaseException;
 import UserService.logic.Exceptions.DuplicateEmailException;
-import org.springframework.web.bind.MissingServletRequestParameterException;
 
 import java.util.Optional;
 
