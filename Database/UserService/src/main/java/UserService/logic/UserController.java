@@ -1,7 +1,10 @@
 package UserService.logic;
 
 import UserService.logic.Entities.User;
+import UserService.logic.Exceptions.DatabaseException;
+import UserService.logic.Exceptions.DuplicateEmailException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -27,11 +30,18 @@ public class UserController {
         return myUserPort.getUser(id);
     }
 
+    @GetMapping("/user/search")
+    public Iterable<User> search(
+            @RequestParam(name = "email", defaultValue = "") String email) throws MissingServletRequestParameterException {
+        if(!email.isEmpty())
+            return myUserPort.findByEmail(email);
+        throw new MissingServletRequestParameterException("email", "String");
+    }
+
     @PostMapping("/user")
     public User createUser(@RequestBody Map<String,String> body) throws DuplicateEmailException, DatabaseException {
         return myUserPort.createUser(body.get("name"), body.get("email"), body.get("password"));
     }
-
 
     @PatchMapping("user/{id}")
     public User patchUser(@PathVariable Long id, @RequestBody User patchedUser){

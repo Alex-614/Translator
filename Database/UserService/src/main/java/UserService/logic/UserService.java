@@ -1,6 +1,8 @@
 package UserService.logic;
 
 import UserService.logic.Entities.User;
+import UserService.logic.Exceptions.DatabaseException;
+import UserService.logic.Exceptions.DuplicateEmailException;
 import UserService.logic.Respositories.UserRepository;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.BeanUtils;
@@ -9,6 +11,7 @@ import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 
 import java.util.*;
 
@@ -48,6 +51,11 @@ public class UserService implements UserPort {
     @Override
     public Iterable<User> getAllUsers(){
         return userRepository.findAll();
+    }
+
+    @Override
+    public Iterable<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     @Override
