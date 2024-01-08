@@ -2,7 +2,11 @@
 # transcription service
 FROM python:3.11.2 AS transcription
 WORKDIR /transcription
+COPY main.py ./
 COPY sfu_server.py ./
+COPY transcriber.py ./
+COPY data.py ./
+COPY translation.py ./
 COPY start.sh ./
 
 COPY requirements.txt ./
