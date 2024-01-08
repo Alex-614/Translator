@@ -5,12 +5,12 @@ import { Component, ViewChild, ElementRef, Renderer2 } from '@angular/core';
     standalone: true,
     imports: [],
     template: `
+    <button (click)=create()>Create</button>
     <button #btn_start>Start</button>
     <button #btn_stop (click)=stop()>Stop</button>
     <p #p_status>statusField</p>
     <p #p_roomId>RoomID</p>
     <input #ip_roomId placeholder="Enter RoomID">
-    <button (click)=create()>Create</button>
     <button (click)=join()>Join</button>
     <p #p_text>Text</p>
     <p #p_partial>Partial</p>
