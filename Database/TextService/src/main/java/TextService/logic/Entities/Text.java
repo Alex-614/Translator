@@ -1,9 +1,6 @@
 package TextService.logic.Entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,9 +13,12 @@ import java.sql.Timestamp;
 @Setter
 public class Text {
     @Id
+    @Column(name = "session_id")
     private Long sessionId;
     @Id
+    @Column(name = "timestamp")
     private Timestamp timestamp;
+    @Column(name = "text_line")
     private String textLine;
 
     public Text(){}
