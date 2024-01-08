@@ -4,5 +4,6 @@ aiortc==1.6.0
 av==11.0.0
 aiohttp-cors==0.7.0
 urllib3==1.26.18
+redis==4.3.4
 
 websockets==12.0

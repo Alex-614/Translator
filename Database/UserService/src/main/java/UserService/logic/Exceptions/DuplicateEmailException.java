@@ -1,4 +1,4 @@
-package UserService.logic;
+package UserService.logic.Exceptions;
 
 public class DuplicateEmailException extends Exception{
 }
