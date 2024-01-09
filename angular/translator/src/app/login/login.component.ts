@@ -26,27 +26,29 @@ import { AuthService } from '../auth.service';
   styleUrl: './login.component.css'
 })
 export class LoginComponent {
-  form:FormGroup;
-  private user: User;
-  private userService: UserService;
+  form: FormGroup;
   constructor(
     private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router){
-      this.form = this.fb.group({
-        email: ['', Validators.required],
-        password: ['', Validators.required]
-      });
-    }
-  login(){
+    /*private authService: AuthService,*/
+    private userService: UserService,
+    private router: Router) {
+    this.form = this.fb.group({
+      email: ['', Validators.required],
+      password: ['', Validators.required]
+    });
+  }
+  login() {
     const val = this.form.value;
-    if (val.email && val.password){
-      this.authService.login(val.email, val.password).subscribe(
-        () => {
-          console.log("User is logged in");
-          this.router.navigate(['/login/account', {}]);
+    if (val.email && val.password) {
+      this.userService.login(val.email).subscribe(
+        data => {
+          if (data[0].password == val.password){
+            console.log("User is logged in");
+            console.log(data[0].id);
+            this.router.navigate(['/login/account'], {queryParams: { userId: data[0].id }});
+          }
         }
-      )
+      );
     }
   }
 }

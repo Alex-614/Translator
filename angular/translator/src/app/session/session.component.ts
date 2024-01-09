@@ -26,7 +26,10 @@ import { DropdownModule } from 'primeng/dropdown';
         <button id="btn_join" class="btn_main" (click)=join() #btn_join>Join</button>
       </div>
       <p id="p_status" #p_status></p>
-      <textarea readonly id="ta_textOutput" #ta_textOutput></textarea>
+      <div id="textarea">
+            <p #p_text></p>
+            <p #p_partial>></p>
+      </div>
       <p id="p_partial" #p_partial></p>
     </main>
   `,
@@ -40,16 +43,16 @@ export class SessionComponent {
   private dcInterval: any;
   @ViewChild('ip_sessionId') ip_sessionId: ElementRef<HTMLInputElement>;
   @ViewChild('btn_join') btn_join: ElementRef<HTMLButtonElement>;
-  @ViewChild('ta_textOutput') ta_textOutput: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('p_text') p_text: ElementRef<HTMLTextAreaElement>;
   @ViewChild('p_partial') p_partial: ElementRef<HTMLParagraphElement>;
   @ViewChild('p_status') p_status: ElementRef<HTMLParagraphElement>;
 
 
 
   // send a webRTC connection offer and additional information to the sfu
-  negotiate(uri_append: string, language: any) { // setup connection
+  negotiate(uri_append: string, language: string) { // setup connection
     const innerThis = this;
-    return this.pc.createOffer().then((offer: any) => {
+    return this.pc.createOffer().then((offer: string) => {
       return innerThis.pc.setLocalDescription(offer);
     }).then(() => {
       return new Promise<void>((resolve) => {
@@ -93,9 +96,9 @@ export class SessionComponent {
   }
 
   performRecvText(str: string) {
-    var htmlStr = this.ta_textOutput.nativeElement.value;
-    htmlStr += str + '\n';
-    this.renderer.setProperty(this.ta_textOutput.nativeElement, 'innerHTML', htmlStr);
+    var htmlStr = this.p_text.nativeElement.innerHTML;
+    htmlStr += '<div>' + str + '</div>\n';
+    this.renderer.setProperty(this.p_text.nativeElement, 'innerHTML', htmlStr);
     this.renderer.setProperty(this.p_partial.nativeElement, 'innerHTML', "> ");
   }
 
@@ -143,6 +146,6 @@ export class SessionComponent {
         console.log('Disconnected');
       }
     }
-    this.negotiate("join?room=" + this.ip_sessionId.nativeElement.value, "de");
+    this.negotiate("join?room=" + this.ip_sessionId.nativeElement.value, "en");
   }
 }

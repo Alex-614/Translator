@@ -15,7 +15,7 @@ import { User } from '../user';
       <p>Password: <input id="ip_regPassword" type="password" class="ip_main" #password></p>
       <p>Password (Repeat): <input id="ip_regPasswordRepeat" type="password" class="ip_main" #passwordRepeat></p>
       <button id="btn_register" class="btn_main" (click)=callRegister(username.value,email.value,password.value,passwordRepeat.value)>Register now</button>
-      <p ngModel #p_error></p>
+      <p #p_error></p>
     </main>
   `,
   styleUrl: './register.component.css'

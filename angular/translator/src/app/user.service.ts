@@ -25,4 +25,8 @@ export class UserService {
   public register(user: User) {
     return this.http.post<User>(this.url, user);
   }
+
+  public login(email:string){
+    return this.http.get<User[]>(this.url + '/search?email=' + email, {});
+  }
 }
