@@ -66,19 +66,45 @@ services:
       text_service_db_leader:
         condition: service_healthy
 
-  # TextService
-  text_service:
+  # TextServiceLeader
+  text_service_leader:
     build:
-      context: ./TextService
+      context: ./TextServiceLeader
       dockerfile: Dockerfile
     ports:
       - "8081:8081"
-    container_name: TextService
+    container_name: TextServiceLeader
+    networks:
+      - TextServiceNetwork
+    depends_on:
+      text_service_db_leader:
+        condition: service_healthy
+
+  # TextServiceFollower
+  text_service_follower:
+    build:
+      context: ./TextServiceFollower
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    container_name: TextServiceFollower
     networks:
       - TextServiceNetwork
     depends_on:
       text_service_db_follower:
         condition: service_healthy
+
+  text_service_gateway:
+    build:
+      context: ./TextServiceGateway
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    container_name: TextServiceGateway
+    networks:
+      - TextServiceNetwork
+    depends_on:
+      - text_service_follower
 
 networks:
   UserServiceNetwork:

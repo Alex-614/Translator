@@ -10,6 +10,8 @@
         <option value="$PROJECT_DIR$/Database/TextService/pom.xml" />
         <option value="$PROJECT_DIR$/TextServiceGateway/pom.xml" />
         <option value="$PROJECT_DIR$/Database/TextServiceGateway/pom.xml" />
+        <option value="$PROJECT_DIR$/Database/TextServiceLeader/pom.xml" />
+        <option value="$PROJECT_DIR$/Database/TextServiceFollower/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">
@@ -17,7 +19,6 @@
         <option value="$PROJECT_DIR$/TextServiceGateway/pom.xml" />
       </set>
     </option>
-    <option name="workspaceImportForciblyTurnedOn" value="true" />
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_17" default="true" project-jdk-name="17" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/out" />

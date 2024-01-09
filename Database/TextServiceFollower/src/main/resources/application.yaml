@@ -1,0 +1,9 @@
+server:
+  port: 8082
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:6544/textdb_follower
+    username: postgres
+    password: postgres
+    driverClassName: org.postgresql.Driver
