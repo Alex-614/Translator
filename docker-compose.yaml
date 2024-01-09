@@ -45,8 +45,8 @@ services:
       retries: 2
       start_period: 1m
       start_interval: 5s
-    #volumes:
-    #  - transcription_db
+    volumes:
+      - transcription_db:/data
 
   translation:
     container_name: translation
@@ -77,9 +77,9 @@ services:
     #  - TRANSCRIPTION_DEBUGMODE=False
 
 
-#volumes:
-#  transcription_db:
-#    name: transcription_db
+volumes:
+  transcription_db:
+    name: translator_transcription_db
 
 
 networks:

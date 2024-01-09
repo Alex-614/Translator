@@ -6,11 +6,14 @@ services:
     build:
       context: ./Dockerimages/UserDBImage
       dockerfile: Dockerfile
-    ports:
-      - "5432:5432"
     container_name: UserServiceDB
     networks:
       - UserServiceNetwork
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # UserService
   user_service:
@@ -23,32 +26,39 @@ services:
     networks:
       - UserServiceNetwork
     depends_on:
-      - user_service_db
+      user_service_db:
+        condition: service_healthy
 
   # TextServiceDB Leader
   text_service_db_leader:
     build:
       context: Dockerimages/TextDBImage/Leader
       dockerfile: Leader.Dockerfile
-    ports:
-      - "6543:6543"
     container_name: TextServiceDBLeader
     networks:
       - TextServiceNetwork
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # TextServiceDB Follower
   text_service_db_follower:
     build:
       context: Dockerimages/TextDBImage/Follower
       dockerfile: Follower.Dockerfile
-    ports:
-     - "6544:6544"
     container_name: TextServiceDBFollower
     networks:
       - TextServiceNetwork
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     depends_on:
       text_service_db_leader:
-        condition: service_started
+        condition: service_healthy
 
   # TextService
   text_service:
@@ -61,7 +71,8 @@ services:
     networks:
       - TextServiceNetwork
     depends_on:
-      - text_service_db_leader
+      text_service_db_follower:
+        condition: service_healthy
 
 networks:
   UserServiceNetwork:
