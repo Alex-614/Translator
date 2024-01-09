@@ -4,6 +4,7 @@ import json
 
 from aiortc import RTCPeerConnection, RTCDataChannel
 
+import pika
 
 from transcriber import KaldiTask
 from translation import Translator
@@ -18,12 +19,13 @@ class Room:
         random.shuffle(chars)
         return "".join(chars[0:5])
     
-    def __init__(self, translator, logger, kaldiTask: KaldiTask, id: str = None):
+    def __init__(self, translator, logger, kaldiTask: KaldiTask, id: str = None, queue = None):
         self.log = logger
         self.id: str = Room.generateID() if id == None else id
         self.users: list[User] = []
         self.task: KaldiTask = kaldiTask
         self.translator: Translator = translator
+        self.queue = queue
 
     def getID(self):
         return self.id

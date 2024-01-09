@@ -2,8 +2,6 @@
 
 import json
 import ssl
-import os
-import logging
 
 from aiohttp import web
 import aiohttp
@@ -13,11 +11,10 @@ import aiohttp_cors
 
 import redis
 
-from websockets.server import serve
-
 from data import Room, User
 from transcriber import Transcriber
 from translation import Translator
+from rabbit import Rabbit
 
 class ServerBuilder:
 
@@ -36,8 +33,12 @@ class ServerBuilder:
         self.translation_port = None
         self.transcriber = None
         self.rooms = {}
+        self.rabbitmq_host = None
+        self.rabbitmq_port = None
+        self.rabbit = None
 
     def build(self):
+        self.__buildRabbit()
         self.__buildTranscriber()
         self.__buildTranslator()
         self.__buildRedisDB()
@@ -47,6 +48,11 @@ class ServerBuilder:
         self.transcriber = Transcriber(self.vosk_model_paths, self.dump_file)
     def getTranscriber(self):
         return self.transcriber
+    
+    def __buildRabbit(self):
+        self.rabbit = Rabbit(self.rabbitmq_host, self.rabbitmq_port)
+    def getRabbit(self):
+        return self.rabbit
     
     def __buildTranslator(self):
         self.translator = Translator(self.log, self.translation_host, self.translation_port)
@@ -81,6 +87,10 @@ class ServerBuilder:
         self.translation_host = host
     def setTranslatorPort(self, port):
         self.translation_port = port
+    def setRabbitMQHost(self, host):
+        self.rabbitmq_host = host
+    def setRabbitMQPort(self, port):
+        self.rabbitmq_port = port
 
     def getPort(self):
         return self.port
@@ -105,6 +115,11 @@ class ServerBuilder:
         return self.translation_host
     def getTranslatorPort(self):
         return self.translation_port
+    
+    def getRabbitMQHost(self):
+        return self.rabbitmq_host
+    def getRabbitMQPort(self):
+        return self.rabbitmq_port
 
     def getRooms(self):
         return self.rooms
@@ -125,6 +140,9 @@ class Server:
         self.dumpfile = builder.getDumpfile()
         self.translator_host = builder.getTranslatorHost()
         self.translator_port = builder.getTranslatorPort()
+        self.rabbitmq_host = builder.getRabbitMQHost()
+        self.rabbitmq_port = builder.getRabbitMQPort()
+        self.rabbit = builder.getRabbit()
         self.translator = builder.getTranslator()
         self.transcriber = builder.getTranscriber()
         self.rooms = builder.getRooms()

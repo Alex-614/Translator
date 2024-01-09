@@ -53,13 +53,13 @@ class KaldiTask: # transcription
         self.__recognizer = KaldiRecognizer(model, 48000)
         self.__onSend = lambda: None
 
-    async def set_audio_track(self, track):
+    def set_audio_track(self, track):
         self.__track = track
 
     async def start(self):
         self.__audio_task = asyncio.create_task(self.__run_audio_xfer())
 
-    async def stop(self):
+    def stop(self):
         if self.__audio_task is not None:
             self.__audio_task.cancel()
             self.__audio_task = None

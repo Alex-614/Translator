@@ -32,6 +32,9 @@ builder.setPort(int(os.environ.get('TRANSCRIPTION_PORT', 2700)))
 builder.setTranslatorHost(str(os.environ.get('TRANSLATION_HOST', '127.0.0.1')))
 builder.setTranslatorPort(str(os.environ.get('TRANSLATION_PORT', '5000')))
 
+builder.setRabbitMQHost(str(os.environ.get('RABBITMQ_HOST', '127.0.0.1')))
+builder.setRabbitMQPort(str(os.environ.get('RABBITMQ_PORT', '5672')))
+
 log.info("TRANSCRIPTION_DEBUGMODE: " + str(builder.getDebugmode()))
 log.info("TRANSCRIPTION_PORT: " + str(builder.getPort()))
 log.info("TRANSLATION_HOST: " + str(builder.getTranslatorHost()))
