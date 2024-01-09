@@ -83,7 +83,7 @@ services:
       dockerfile: Dockerfile
     container_name: UserServiceDB
     networks:
-      - backnet
+      - UserServiceNetwork
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
@@ -99,7 +99,7 @@ services:
       - "8080:8080"
     container_name: UserService
     networks:
-      - backnet
+      - UserServiceNetwork
     depends_on:
       user_service_db:
         condition: service_healthy
@@ -154,6 +154,8 @@ services:
     hostname: angular-application
     networks:
       - backnet
+      - TextServiceNetwork
+      - UserServiceNetwork
     build:
       context: ./angular/translator
       dockerfile: Dockerfile
