@@ -11,9 +11,9 @@ public class TextGatewayConfig {
     public RouteLocator gatewayRoutes(RouteLocatorBuilder builder) {
         return builder.routes()
                 .route("TextServiceFollower", r -> r.method("GET")
-                        .uri("http://localhost:8081"))
+                        .uri("http://TextServiceFollower:8083"))
                 .route("TextServiceLeader", r -> r.method("POST", "PUT", "DELETE")
-                        .uri("http://localhost:8082"))
+                        .uri("http://TextServiceLeader:8082"))
                 .build();
     }
 }
