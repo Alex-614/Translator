@@ -34,9 +34,12 @@ services:
     build:
       context: Dockerimages/TextDBImage/Leader
       dockerfile: Leader.Dockerfile
+    ports:
+      - "6543:6543"
     container_name: TextServiceDBLeader
     networks:
       - TextServiceNetwork
+    command: ["postgres", "-c", "log_statement=all"]
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
@@ -49,6 +52,8 @@ services:
       context: Dockerimages/TextDBImage/Follower
       dockerfile: Follower.Dockerfile
     container_name: TextServiceDBFollower
+    ports:
+      - "6544:6544"
     networks:
       - TextServiceNetwork
     healthcheck:
@@ -56,6 +61,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    command: ["postgres", "-c", "log_statement=all"]
     depends_on:
       text_service_db_leader:
         condition: service_healthy

@@ -4,12 +4,12 @@ server:
 spring:
   datasource:
     leader:
-      url: jdbc:postgresql://TextServiceDBLeader:6543/textdb_leader
+      url: jdbc:postgresql://localhost:6543/textdb_leader
       username: postgres
       password: postgres
       driverClassName: org.postgresql.Driver
     follower:
-      url: jdbc:postgresql://TextServiceDBFollower:6544/textdb_leader
+      url: jdbc:postgresql://localhost:6544/textdb_follower
       username: postgres
       password: postgres
       driverClassName: org.postgresql.Driver

@@ -4,9 +4,9 @@ import TextService.logic.Entities.Text;
 import TextService.logic.Entities.TextId;
 import TextService.logic.Repositories.follower.FollowerTextRepository;
 import TextService.logic.Repositories.leader.LeaderTextRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -24,6 +24,7 @@ public class TextService implements TextPort{
     }
 
     @Override
+    @Transactional(transactionManager = "leaderTextTransactionManager", readOnly = false)
     public Text createTextLine(Long sessionId, String textLine) {
         Timestamp timestamp = Timestamp.from(Instant.now());
         TextId textId = new TextId(sessionId, timestamp);
@@ -31,12 +32,13 @@ public class TextService implements TextPort{
     }
 
     @Override
+    @Transactional(transactionManager = "followerTextTransactionManager", readOnly = true)
     public Iterable<Text> getSessionText(Long sessionId) {
         return followerTextRepository.findBySessionId(sessionId);
     }
 
     @Override
-    @Transactional
+    @Transactional(transactionManager = "leaderTextTransactionManager", readOnly = false)
     public Iterable<Text> deleteSessionText(Long sessionId) {
         return leaderTextRepository.deleteBySessionId(sessionId);
     }

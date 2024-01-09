@@ -9,12 +9,13 @@
         <outputRelativeToContentRoot value="true" />
         <module name="UserService" />
         <module name="TextService" />
+        <module name="TextServiceGateway" />
       </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="TextService" options="-parameters" />
+      <module name="TextService" options="" />
       <module name="UserService" options="-parameters" />
     </option>
   </component>
