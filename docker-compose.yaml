@@ -75,7 +75,92 @@ services:
       - LT_LOAD_ONLY=en,de
       - LT_DEBUG=false
     #  - TRANSCRIPTION_DEBUGMODE=False
+    
+  # UserServiceDB
+  user_service_db:
+    build:
+      context: ./Database/Dockerimages/UserDBImage
+      dockerfile: Dockerfile
+    container_name: UserServiceDB
+    networks:
+      - backnet
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
+  # UserService
+  user_service:
+    build:
+      context: ./Database/UserService
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    container_name: UserService
+    networks:
+      - backnet
+    depends_on:
+      user_service_db:
+        condition: service_healthy
+
+  # TextServiceDB Leader
+  text_service_db_leader:
+    build:
+      context: ./Database/Dockerimages/TextDBImage/Leader
+      dockerfile: Leader.Dockerfile
+    container_name: TextServiceDBLeader
+    networks:
+      - TextServiceNetwork
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # TextServiceDB Follower
+  text_service_db_follower:
+    build:
+      context: ./Database/Dockerimages/TextDBImage/Follower
+      dockerfile: Follower.Dockerfile
+    container_name: TextServiceDBFollower
+    networks:
+      - TextServiceNetwork
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      text_service_db_leader:
+        condition: service_healthy
+
+  # TextService
+  text_service:
+    build:
+      context: ./Database/TextService
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    container_name: TextService
+    networks:
+      - TextServiceNetwork
+    depends_on:
+      text_service_db_follower:
+        condition: service_healthy
+    
+  angular-application:
+    container_name: angular-application
+    hostname: angular-application
+    networks:
+      - backnet
+    build:
+      context: ./angular/translator
+      dockerfile: Dockerfile
+    image: angular-application
+    ports:
+      - "9090:80"
+    restart: on-failure
 
 volumes:
   transcription_db:
@@ -85,6 +170,10 @@ volumes:
 networks:
   backnet:
     name: backnet
+  UserServiceNetwork:
+    driver: bridge
+  TextServiceNetwork:
+    driver: bridge
 
 
 

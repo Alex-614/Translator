@@ -73,7 +73,7 @@ export class SessionComponent {
       var offer = innerThis.pc.localDescription;
       console.log(offer.sdp);
       console.log(uri_append);
-      return fetch('http://127.0.0.1:2700/' + uri_append, { // fetch request offer from server [url here]
+      return fetch('http://transcription:2700/' + uri_append, { // fetch request offer from server [url here]
         body: JSON.stringify({
           sdp: offer.sdp,
           type: offer.type,
