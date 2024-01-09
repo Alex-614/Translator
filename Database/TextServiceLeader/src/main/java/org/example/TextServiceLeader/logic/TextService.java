@@ -21,7 +21,6 @@ public class TextService implements TextPort {
     }
 
     @Override
-    @Transactional(transactionManager = "leaderTextTransactionManager", readOnly = false)
     public Text createTextLine(Long sessionId, String textLine) {
         Timestamp timestamp = Timestamp.from(Instant.now());
         TextId textId = new TextId(sessionId, timestamp);
@@ -30,7 +29,6 @@ public class TextService implements TextPort {
 
 
     @Override
-    @Transactional(transactionManager = "leaderTextTransactionManager", readOnly = false)
     public Iterable<Text> deleteSessionText(Long sessionId) {
         return leaderTextRepository.deleteBySessionId(sessionId);
     }

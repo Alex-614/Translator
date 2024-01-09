@@ -17,7 +17,6 @@ public class TextService implements TextPort {
     }
 
     @Override
-    @Transactional(transactionManager = "followerTextTransactionManager", readOnly = true)
     public Iterable<Text> getSessionText(Long sessionId) {
         return followerTextRepository.findBySessionId(sessionId);
     }

@@ -4,8 +4,6 @@ import org.example.TextServiceFollower.logic.Entities.Text;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
 public class TextController {
     public final TextPort textPort;
