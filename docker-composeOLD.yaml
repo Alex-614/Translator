@@ -19,15 +19,15 @@ services:
         condition: service_healthy
       translation:
         condition: service_healthy
-      rabbitmq:
+      transcription_rabbitmq:
         condition: service_healthy
     restart: on-failure
     environment:
       - TRANSCRIPTION_DEBUGMODE=True
       - TRANSLATION_HOST=translation
       - TRANSLATION_PORT=5000
-      - TRANSLATION_HOST=rabbitmq
-      - TRANSLATION_PORT=5672
+      - RABBITMQ_HOST=transcription_rabbitmq
+      - RABBITMQ_PORT=5672
       - REDIS_HOST=transcription_redis
       - REDIS_PORT=6379
       - TRANSCRIPTION_PORT=2700
@@ -81,9 +81,9 @@ services:
     #  - TRANSCRIPTION_DEBUGMODE=False
 
 
-  rabbitmq:
-    container_name: rabbitmq
-    hostname: rabbitmq
+  transcription_rabbitmq:
+    container_name: transcription_rabbitmq
+    hostname: transcription_rabbitmq
     networks:
       - backnet
     image: rabbitmq

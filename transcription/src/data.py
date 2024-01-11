@@ -4,10 +4,9 @@ import json
 
 from aiortc import RTCPeerConnection, RTCDataChannel
 
-import pika
-
 from transcriber import KaldiTask
 from translation import Translator
+from rabbit import Channel
 
 class Room:
 
@@ -19,13 +18,13 @@ class Room:
         random.shuffle(chars)
         return "".join(chars[0:5])
     
-    def __init__(self, translator, logger, kaldiTask: KaldiTask, id: str = None, queue = None):
+    def __init__(self, translator, logger, kaldiTask: KaldiTask, id: str = None, channel: Channel = None):
         self.log = logger
         self.id: str = Room.generateID() if id == None else id
         self.users: list[User] = []
         self.task: KaldiTask = kaldiTask
         self.translator: Translator = translator
-        self.queue = queue
+        self.channel = channel
 
     def getID(self):
         return self.id
@@ -49,24 +48,31 @@ class Room:
         text = result.get("text")
         self.log.debug("original text: '" + str(text) + "'")
         self.log.debug("original partial: '" + str(partial) + "'")
+        if text != None and text != "":
+            self.channel.enQueue(text)
         translated = ""
+        cache = {}
         # iterate all users
         for user in self.users:
             try:
                 if not "closed" in user.getDataChannel().readyState:
-                    if partial != None and partial != "":
-                        if self.translator == None:
-                            translated = json.dumps({"partial": partial})
-                        else:
-                            # translate partial
-                            translated = json.dumps({"partial": self.translator.translate(q = partial, source = language, target = user.getLanguage(), timeout = 100)})
-                    elif text != None and text != "":
-                        if self.translator == None:
-                            translated = json.dumps({"text": text})
-                        else:
-                            # translate text
-                            translated = json.dumps({"text": self.translator.translate(q = text, source = language, target = user.getLanguage(), timeout = 100)})
-                    self.log.info("sending to: " + user.getLanguage() + "; translated: '" + str(translated) + "'")
+                    if cache.get(user.getLanguage()) == None:
+                        if partial != None and partial != "":
+                            if self.translator == None:
+                                translated = json.dumps({"partial": partial})
+                            else:
+                                # translate partial
+                                translated = json.dumps({"partial": self.translator.translate(q = partial, source = language, target = user.getLanguage(), timeout = 100)})
+                        elif text != None and text != "":
+                            if self.translator == None:
+                                translated = json.dumps({"text": text})
+                            else:
+                                # translate text
+                                translated = json.dumps({"text": self.translator.translate(q = text, source = language, target = user.getLanguage(), timeout = 100)})
+                        cache[user.getLanguage()] = translated
+                    else:
+                        translated = cache.get(user.getLanguage())
+                    self.log.debug("sending to: " + user.getLanguage() + "; translated: '" + str(translated) + "'")
                     # send to user
                     if user.getDataChannel() != None:
                         user.getDataChannel().send(translated)

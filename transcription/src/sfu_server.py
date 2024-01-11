@@ -150,6 +150,7 @@ class Server:
     def __init__(self, builder: ServerBuilder):
         self.loadBuilder(builder)
 
+    def start(self):
         self.log.info("starting transcription service...")
 
         if self.vosk_cert_file:
@@ -259,8 +260,8 @@ class Server:
         while self.redis_db.sismember("room", roomid):
             roomid = Room.generateID()
 
-        room: Room = Room(translator = self.translator, logger = self.log, kaldiTask = self.transcriber.newTask(language), id = roomid)
-        self.redis_db.sadd("room", roomid)
+        room: Room = Room(translator = self.translator, logger = self.log, kaldiTask = self.transcriber.newTask(language), id = roomid, channel = self.rabbit.newChannel("room#" + roomid))
+        self.redis_db.sadd("room#", roomid)
         self.rooms[room.getID()] = room
 
         user: User = User()

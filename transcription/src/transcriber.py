@@ -8,7 +8,6 @@ import concurrent.futures
 from vosk import KaldiRecognizer, Model
 from av.audio.resampler import AudioResampler
 
-
 class Transcriber:
     
     def __init__(self, model_paths, dump_file):
@@ -53,13 +52,13 @@ class KaldiTask: # transcription
         self.__recognizer = KaldiRecognizer(model, 48000)
         self.__onSend = lambda: None
 
-    def set_audio_track(self, track):
+    async def set_audio_track(self, track):
         self.__track = track
 
     async def start(self):
         self.__audio_task = asyncio.create_task(self.__run_audio_xfer())
 
-    def stop(self):
+    async def stop(self):
         if self.__audio_task is not None:
             self.__audio_task.cancel()
             self.__audio_task = None
@@ -93,6 +92,4 @@ class KaldiTask: # transcription
     
     def setOnSend(self, do):
         self.__onSend = do
-
-
 

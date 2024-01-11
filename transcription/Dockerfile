@@ -6,6 +6,7 @@ COPY src/main.py ./
 COPY src/sfu_server.py ./
 COPY src/transcriber.py ./
 COPY src/data.py ./
+COPY src/rabbit.py ./
 COPY src/translation.py ./
 
 COPY start.sh ./

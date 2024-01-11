@@ -18,42 +18,8 @@
     </div>
     <hr>
     
-    <button id="open-login-button" class="open-button" onclick="openForm()">Login</button>
-    <!-- The form -->
-    <div class="form-popup" id="myForm">
-        <form class="form-container">
-            <h1 style="text-align: center;">Login</h1>
-
-            <label for="email"><b>Email</b></label>
-            <input type="text" placeholder="Enter Email" name="email" id="email" required>
-            
-            <label for="psw"><b>Password</b></label>
-            <!-- <input type="password" placeholder="Enter Password" name="psw" required> -->
-            <input type="password" placeholder="Enter Password" name="psw">
-
-            <!-- <button type="submit" class="btn">Login</button> -->
-            <button type="button" class="btn" onclick="login();closeForm()">Login</button>
-            <button type="button" class="btn cancel" onclick="closeForm()">Close</button>
-        </form>
-        <script>
-            function login() {
-                document.getElementById("transcription-container").hidden = false;
-                document.getElementById("open-login-button").hidden = true;
-                document.getElementById("username").innerText = document.getElementsByName("email")[0].nodeValue;
-            }
-
-            function openForm() {
-                document.getElementById("myForm").style.display = "block";
-            }
-
-            function closeForm() {
-                document.getElementById("myForm").style.display = "none";
-            }
-        </script>
-    </div>
-
     
-    <div id="transcription-container" class="container" hidden=true>
+    <div id="transcription-container" class="container">
         
         <form>
             <h1 style="text-align: center;">JOIN</h1>

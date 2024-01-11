@@ -44,3 +44,9 @@ log.info("REDIS_PORT: " + str(builder.getRedisPort()))
 log.info("VOSK_MODEL_PATHS: " + str(builder.getVoskModelPaths()))
 
 server = builder.build()
+
+server.start()
+
+
+
+
