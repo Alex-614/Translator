@@ -9,9 +9,8 @@ CREATE TABLE "user" (
 );
 
 CREATE TABLE "user_session" (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id BIGINT PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    session_UUID String(36) NOT NULL,
-    UNIQUE KEY unique_user_session (user_id, session_id),
+    session_UUID VARCHAR(36) NOT NULL,
     FOREIGN KEY (user_id) REFERENCES "user"(id)
 );
