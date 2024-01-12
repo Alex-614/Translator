@@ -14,7 +14,7 @@ import java.sql.Timestamp;
 public class Text {
     @Id
     @Column(name = "session_id")
-    private Long sessionId;
+    private String sessionId;
     @Id
     @Column(name = "timestamp")
     private Timestamp timestamp;

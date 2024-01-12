@@ -7,12 +7,12 @@ import java.sql.Timestamp;
 
 @Getter
 public class TextId implements Serializable {
-    private Long sessionId;
+    private String sessionId;
     private Timestamp timestamp;
 
     public TextId() {}
 
-    public TextId(Long sessionId, Timestamp timestamp) {
+    public TextId(String sessionId, Timestamp timestamp) {
         this.sessionId = sessionId;
         this.timestamp = timestamp;
     }

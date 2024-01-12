@@ -21,15 +21,14 @@ public class TextService implements TextPort {
     }
 
     @Override
-    public Text createTextLine(Long sessionId, String textLine) {
-        Timestamp timestamp = Timestamp.from(Instant.now());
-        TextId textId = new TextId(sessionId, timestamp);
+    public Text createTextLine(String sessionUUID, Timestamp timestamp, String textLine) {
+        TextId textId = new TextId(sessionUUID, timestamp);
         return leaderTextRepository.save(new Text(textId, textLine));
     }
 
 
     @Override
-    public Iterable<Text> deleteSessionText(Long sessionId) {
+    public Iterable<Text> deleteSessionText(String sessionId) {
         return leaderTextRepository.deleteBySessionId(sessionId);
     }
 }

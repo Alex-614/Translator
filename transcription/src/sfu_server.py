@@ -282,7 +282,7 @@ class Server:
         self.rooms[room.getID()] = room
 
         userid = params.get("userid")
-        self.sendUserSession(userid, room.getUUID())
+        #self.sendUserSession(userid, room.getUUID())
 
         user: User = User()
         room.getUsers().append(user)
@@ -328,8 +328,9 @@ class Server:
             }))
 
     def sendUserSession(self, userid, roomuuid):
-        data = urllib.parse.urlencode({"userid": userid, "sessionuuid": roomuuid}).encode()
+        data = urllib.parse.urlencode({"user_id": userid, "session_UUID": roomuuid}).encode()
         req =  urllib.request.Request("http://" + self.userservice_host + ":" + self.userservice_port + "/user_session", data=data)
+        req.add_header('Content-Type', 'application/json')
         resp = urllib.request.urlopen(req)
 
     #

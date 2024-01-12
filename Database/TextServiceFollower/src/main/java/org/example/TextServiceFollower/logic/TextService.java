@@ -17,7 +17,7 @@ public class TextService implements TextPort {
     }
 
     @Override
-    public Iterable<Text> getSessionText(Long sessionId) {
+    public Iterable<Text> getSessionText(String sessionId) {
         return followerTextRepository.findBySessionId(sessionId);
     }
 }

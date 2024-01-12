@@ -7,7 +7,8 @@ services:
     container_name: transcription
     hostname: transcription
     networks:
-      - backnet
+      - UserServiceNetwork
+      - TextServiceNetwork
     build:
       context: ./transcription
       dockerfile: Dockerfile
@@ -30,14 +31,16 @@ services:
       - RABBITMQ_PORT=5672
       - REDIS_HOST=transcription_redis
       - REDIS_PORT=6379
+      - USER_SERVICE_HOST=user_service
+      - USER_SERVICE_PORT=8080
       - TRANSCRIPTION_PORT=2700
       - VOSK_MODEL_PATHS={"en":"models/vosk-model-en-us-0.22","de":"models/vosk-model-de-0.21"}
-  
+
   transcription_redis:
     container_name: transcription_redis
     hostname: transcription_redis
     networks:
-      - backnet
+      - TextServiceNetwork
     image: redis
     ports:
       - "6379:6379"
@@ -56,7 +59,7 @@ services:
     container_name: translation
     hostname: translation
     networks:
-      - backnet
+      - TextServiceNetwork
     build:
       context: ./translation
       dockerfile: Dockerfile
@@ -85,10 +88,14 @@ services:
     container_name: transcription_rabbitmq
     hostname: transcription_rabbitmq
     networks:
-      - backnet
-    image: rabbitmq
+      - TextServiceNetwork
+    image: rabbitmq:management
+    volumes:
+      - ./init/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./init/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
     ports:
       - "5672:5672"
+      - "15672:15672"
     restart: on-failure
     healthcheck:
       test: rabbitmq-diagnostics -q ping
@@ -97,7 +104,7 @@ services:
       retries: 3
       start_period: 1m
       start_interval: 5s
-    
+
   # UserServiceDB
   user_service_db:
     build:
@@ -157,20 +164,43 @@ services:
       text_service_db_leader:
         condition: service_healthy
 
-  # TextService
-  text_service:
+  # TextServiceGateway
+  text_service_gateway:
     build:
-      context: ./Database/TextService
+      context: ./Database/TextServiceGateway
       dockerfile: Dockerfile
     ports:
       - "8081:8081"
-    container_name: TextService
+    container_name: TextServiceGateway
+    networks:
+      - TextServiceNetwork
+    depends_on:
+      - text_service_follower
+
+  # TextServiceLeader
+  text_service_leader:
+    build:
+      context: ./Database/TextServiceLeader
+      dockerfile: Dockerfile
+    container_name: TextServiceLeader
+    networks:
+      - TextServiceNetwork
+    depends_on:
+      text_service_db_leader:
+        condition: service_healthy
+
+  # TextServiceFollower
+  text_service_follower:
+    build:
+      context: ./Database/TextServiceFollower
+      dockerfile: Dockerfile
+    container_name: TextServiceFollower
     networks:
       - TextServiceNetwork
     depends_on:
       text_service_db_follower:
         condition: service_healthy
-    
+
   angular-application:
     container_name: angular-application
     hostname: angular-application
@@ -185,14 +215,12 @@ services:
       - "9090:80"
     restart: on-failure
 
+
 volumes:
   transcription_db:
     name: translator_transcription_db
 
-
 networks:
-  backnet:
-    name: backnet
   UserServiceNetwork:
     driver: bridge
   TextServiceNetwork:

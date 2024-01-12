@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@RestController
+//@RestController
 public class TextController {
-    public final TextPort textPort;
+    /*public final TextPort textPort;
 
     @Autowired
     public TextController(TextPort textPort) {
@@ -25,5 +25,5 @@ public class TextController {
     @DeleteMapping("/text/{sessionId}")
     public Iterable<Text> deleteSessionText(@PathVariable Long sessionId){
         return textPort.deleteSessionText(sessionId);
-    }
+    }*/
 }

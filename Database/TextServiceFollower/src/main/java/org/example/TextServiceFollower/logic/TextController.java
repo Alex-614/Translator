@@ -14,7 +14,7 @@ public class TextController {
     }
 
     @GetMapping("/text/{sessionId}")
-    public Iterable<Text> getSessionText(@PathVariable Long sessionId) {
+    public Iterable<Text> getSessionText(@PathVariable String sessionId) {
         return textPort.getSessionText(sessionId);
     }
 }

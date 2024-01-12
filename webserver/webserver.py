@@ -6,7 +6,7 @@ from aiohttp import web
 
 ROOT = Path(__file__).parent
 
-port = int(os.environ.get('SERVER_PORT', 8080))
+port = int(os.environ.get('SERVER_PORT', 9090))
 
 async def index(request):
     content = open(str(ROOT / 'index.html')).read()
