@@ -8,7 +8,16 @@
         <option value="$PROJECT_DIR$/Database/user-service/pom.xml" />
         <option value="$PROJECT_DIR$/Database/UserService/pom.xml" />
         <option value="$PROJECT_DIR$/Database/TextService/pom.xml" />
+        <option value="$PROJECT_DIR$/TextServiceGateway/pom.xml" />
+        <option value="$PROJECT_DIR$/Database/TextServiceGateway/pom.xml" />
+        <option value="$PROJECT_DIR$/Database/TextServiceLeader/pom.xml" />
+        <option value="$PROJECT_DIR$/Database/TextServiceFollower/pom.xml" />
       </list>
+    </option>
+    <option name="ignoredFiles">
+      <set>
+        <option value="$PROJECT_DIR$/TextServiceGateway/pom.xml" />
+      </set>
     </option>
     <option name="workspaceImportForciblyTurnedOn" value="true" />
   </component>

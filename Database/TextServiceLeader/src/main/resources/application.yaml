@@ -1,0 +1,9 @@
+server:
+  port: 8082
+
+spring:
+  datasource:
+    url: jdbc:postgresql://TextServiceDBLeader:6543/textdb
+    username: postgres
+    password: postgres
+    driverClassName: org.postgresql.Driver
