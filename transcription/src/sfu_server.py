@@ -329,8 +329,9 @@ class Server:
 
     def sendUserSession(self, userid, roomuuid):
         data = urllib.parse.urlencode({"userid": userid, "sessionuuid": roomuuid}).encode()
-        req =  urllib.request.Request("http://" + self.userservice_host + ":" + self.userservice_port + "/user_session", data=data)
-        resp = urllib.request.urlopen(req)
+        req = urllib.request.Request("http://" + self.userservice_host + ":" + self.userservice_port + "/user_session", data = data)
+        req.add_header('Content-Type', 'application/json')
+        response = urllib.request.urlopen(req)
 
     #
     # deprecated
