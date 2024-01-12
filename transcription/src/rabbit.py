@@ -21,7 +21,7 @@ class Channel:
     def __init__(self, channel: amqpstorm.Channel, id: str):
         self.id: str = id
         self.channel = channel
-        self.__createQueue(self.id)
+        #self.__createQueue(self.id)
 
     def __createQueue(self, id: str = None):
         if id == None:
@@ -40,7 +40,7 @@ class Channel:
             'headers': {'key': 'value'}
         }
         message: Message = Message.create(self.channel, message, properties)
-        message.publish(id)
+        message.publish("room_queue", exchange = "room_exchange")
         
 
 

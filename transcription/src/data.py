@@ -1,6 +1,8 @@
 
 import random
 import json
+import uuid
+import time
 
 from aiortc import RTCPeerConnection, RTCDataChannel
 
@@ -18,9 +20,10 @@ class Room:
         random.shuffle(chars)
         return "".join(chars[0:5])
     
-    def __init__(self, translator, logger, kaldiTask: KaldiTask, id: str = None, channel: Channel = None):
+    def __init__(self, translator, logger, kaldiTask: KaldiTask, channel: Channel, id: str = None):
         self.log = logger
         self.id: str = Room.generateID() if id == None else id
+        self.uuid: str = uuid.uuid4()
         self.users: list[User] = []
         self.task: KaldiTask = kaldiTask
         self.translator: Translator = translator
@@ -28,7 +31,10 @@ class Room:
 
     def getID(self):
         return self.id
-    
+
+    def getUUID(self):
+        return self.uuid
+
     def getUsers(self):
         return self.users
     
@@ -49,7 +55,7 @@ class Room:
         self.log.debug("original text: '" + str(text) + "'")
         self.log.debug("original partial: '" + str(partial) + "'")
         if text != None and text != "":
-            self.channel.enQueue(text)
+            self.channel.enQueue(json.dumps({"text": str(text), "timestamp": str(time.time()), "uuid": str(self.uuid)}))
         translated = ""
         cache = {}
         # iterate all users

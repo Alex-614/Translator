@@ -30,6 +30,8 @@ services:
       - RABBITMQ_PORT=5672
       - REDIS_HOST=transcription_redis
       - REDIS_PORT=6379
+      - USER_SERVICE_HOST=user_service
+      - USER_SERVICE_PORT=8080
       - TRANSCRIPTION_PORT=2700
       - VOSK_MODEL_PATHS={"en":"models/vosk-model-en-us-0.22","de":"models/vosk-model-de-0.21"}
   
@@ -86,7 +88,10 @@ services:
     hostname: transcription_rabbitmq
     networks:
       - backnet
-    image: rabbitmq
+    image: rabbitmq:management
+    volumes:
+      - ./init/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./init/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
     ports:
       - "5672:5672"
     restart: on-failure

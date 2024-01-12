@@ -41,6 +41,8 @@ log.info("TRANSLATION_HOST: " + str(builder.getTranslatorHost()))
 log.info("TRANSLATION_PORT: " + str(builder.getTranslatorPort()))
 log.info("REDIS_HOST: " + str(builder.getRedisHost()))
 log.info("REDIS_PORT: " + str(builder.getRedisPort()))
+log.info("USER_SERVICE_HOST: " + str(builder.getUserServiceHost()))
+log.info("USER_SERVICE_PORT: " + str(builder.getUserServicePort()))
 log.info("VOSK_MODEL_PATHS: " + str(builder.getVoskModelPaths()))
 
 server = builder.build()
