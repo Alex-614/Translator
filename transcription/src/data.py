@@ -2,7 +2,6 @@
 import random
 import json
 import uuid
-import time
 
 from aiortc import RTCPeerConnection, RTCDataChannel
 
@@ -55,7 +54,7 @@ class Room:
         self.log.debug("original text: '" + str(text) + "'")
         self.log.debug("original partial: '" + str(partial) + "'")
         if text != None and text != "":
-            self.channel.enQueue(json.dumps({"text": str(text), "timestamp": str(time.time()), "uuid": str(self.uuid)}))
+            self.channel.enQueue(json.dumps({"text": str(text), "uuid": str(self.uuid)}))
         translated = ""
         cache = {}
         # iterate all users
