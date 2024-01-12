@@ -58,7 +58,7 @@ public class UserService implements UserPort {
     }
 
     @Override
-    public Iterable<String> getAllSessions(Long userId) {
+    public Iterable<User_Session> getAllSessions(Long userId) {
         return userSessionRepository.findByUserId(userId);
     }
 

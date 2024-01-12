@@ -31,8 +31,8 @@ public class UserController {
         return myUserPort.getUser(id);
     }
 
-    @GetMapping("/user_session/{user_id}")
-    public Iterable<String> allSession(@PathVariable Long userId) {
+    @GetMapping("/user_session/{userId}")
+    public Iterable<User_Session> allSession(@PathVariable Long userId) {
         return myUserPort.getAllSessions(userId);
     }
 

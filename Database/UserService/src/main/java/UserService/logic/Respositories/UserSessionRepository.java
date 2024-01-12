@@ -5,5 +5,5 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 public interface UserSessionRepository extends CrudRepository<User_Session, Long> {
-    Iterable<String> findByUserId(@Param("user_id") Long user_id);
+    Iterable<User_Session> findByUserId(Long userId);
 }
