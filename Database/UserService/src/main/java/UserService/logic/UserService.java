@@ -1,9 +1,11 @@
 package UserService.logic;
 
 import UserService.logic.Entities.User;
+import UserService.logic.Entities.User_Session;
 import UserService.logic.Exceptions.DatabaseException;
 import UserService.logic.Exceptions.DuplicateEmailException;
 import UserService.logic.Respositories.UserRepository;
+import UserService.logic.Respositories.UserSessionRepository;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
@@ -17,11 +19,13 @@ import java.util.*;
 @Service
 public class UserService implements UserPort {
     private final UserRepository userRepository;
+    private final UserSessionRepository userSessionRepository;
     static Long userId = 0L;
 
     @Autowired
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, UserSessionRepository userSessionRepository) {
         this.userRepository = userRepository;
+        this.userSessionRepository = userSessionRepository;
     }
 
     @Override
@@ -43,8 +47,19 @@ public class UserService implements UserPort {
     }
 
     @Override
+    public User_Session createUserToSession(Long user_id, String session_UUID) {
+        User_Session us = new User_Session(user_id, session_UUID);
+        return userSessionRepository.save(us);
+    }
+
+    @Override
     public Optional<User> getUser(Long userId) {
         return userRepository.findById(userId);
+    }
+
+    @Override
+    public Iterable<String> getAllSessions(Long userId) {
+        return userSessionRepository.findByUserId(userId);
     }
 
     @Override
