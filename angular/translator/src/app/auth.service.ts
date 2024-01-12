@@ -11,7 +11,7 @@ export class AuthService {
   constructor(
     public jwtHelper: JwtHelperService,
     private http: HttpClient) { 
-      this.url = 'http://UserService:8080/user'
+      this.url = 'http://127.0.0.1:8080/user'
     }
 
   public isAuthenticated(): boolean{

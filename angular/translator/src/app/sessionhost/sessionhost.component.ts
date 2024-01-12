@@ -62,9 +62,9 @@ export class SessionhostComponent {
     }
 
     // send a webRTC connection offer and additional information to the sfu
-    negotiate(uri_append: string, language: string) { // setup connection
+    negotiate(uri_append: any, language: any) { // setup connection
         const innerThis = this;
-        return this.pc.createOffer().then((offer: string) => {
+        return this.pc.createOffer().then((offer: any) => {
             return innerThis.pc.setLocalDescription(offer);
         }).then(() => {
             return new Promise<void>((resolve) => {
@@ -85,7 +85,7 @@ export class SessionhostComponent {
             var offer = innerThis.pc.localDescription;
             console.log(offer.sdp);
             console.log(uri_append);
-            return fetch('http://transcription:2700/' + uri_append, { // fetch request offer from server [url here]
+            return fetch('http://127.0.0.1:2700/' + uri_append, { // fetch request offer from server [url here]
                 body: JSON.stringify({
                     sdp: offer.sdp,
                     type: offer.type,
@@ -135,7 +135,7 @@ export class SessionhostComponent {
         this.dc.onopen = function () {
             console.log('Opened data channel');
         };
-        this.dc.onmessage = function (messageEvent: { data: string; }) {
+        this.dc.onmessage = function (messageEvent: { data: any; }) {
             innerThis.renderer.setProperty(innerThis.p_status.nativeElement, 'innerHTML', "Listening... say something");
 
             if (!messageEvent.data) {
