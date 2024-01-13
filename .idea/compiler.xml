@@ -14,12 +14,15 @@
         <module name="TextServiceFollower" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="TextService" target="17" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="TextService" options="-parameters" />
       <module name="TextServiceFollower" options="-parameters" />
-      <module name="TextServiceGateway" options="" />
+      <module name="TextServiceGateway" options="-parameters" />
       <module name="TextServiceLeader" options="-parameters" />
       <module name="UserService" options="-parameters" />
     </option>

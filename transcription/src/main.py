@@ -35,12 +35,17 @@ builder.setTranslatorPort(str(os.environ.get('TRANSLATION_PORT', '5000')))
 builder.setRabbitMQHost(str(os.environ.get('RABBITMQ_HOST', '127.0.0.1')))
 builder.setRabbitMQPort(str(os.environ.get('RABBITMQ_PORT', '5672')))
 
+builder.setUserServiceHost(str(os.environ.get('USER_SERVICE_HOST', '127.0.0.1')))
+builder.setUserServicePort(str(os.environ.get('USER_SERVICE_PORT', '8080')))
+
 log.info("TRANSCRIPTION_DEBUGMODE: " + str(builder.getDebugmode()))
 log.info("TRANSCRIPTION_PORT: " + str(builder.getPort()))
 log.info("TRANSLATION_HOST: " + str(builder.getTranslatorHost()))
 log.info("TRANSLATION_PORT: " + str(builder.getTranslatorPort()))
 log.info("REDIS_HOST: " + str(builder.getRedisHost()))
 log.info("REDIS_PORT: " + str(builder.getRedisPort()))
+log.info("USER_SERVICE_HOST: " + str(builder.getUserServiceHost()))
+log.info("USER_SERVICE_PORT: " + str(builder.getUserServicePort()))
 log.info("VOSK_MODEL_PATHS: " + str(builder.getVoskModelPaths()))
 
 server = builder.build()

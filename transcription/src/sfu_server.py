@@ -11,6 +11,9 @@ import aiohttp_cors
 
 import redis
 
+import urllib.request
+import urllib.parse
+
 from data import Room, User
 from transcriber import Transcriber
 from translation import Translator
@@ -36,6 +39,8 @@ class ServerBuilder:
         self.rabbitmq_host = None
         self.rabbitmq_port = None
         self.rabbit = None
+        self.userservice_host = None
+        self.userservice_port = None
 
     def build(self):
         self.__buildRabbit()
@@ -92,6 +97,11 @@ class ServerBuilder:
     def setRabbitMQPort(self, port):
         self.rabbitmq_port = port
 
+    def setUserServiceHost(self, host):
+        self.userservice_host = host
+    def setUserServicePort(self, port):
+        self.userservice_port = port
+
     def getPort(self):
         return self.port
 
@@ -120,6 +130,11 @@ class ServerBuilder:
         return self.rabbitmq_host
     def getRabbitMQPort(self):
         return self.rabbitmq_port
+    
+    def getUserServiceHost(self):
+        return self.userservice_host
+    def getUserServicePort(self):
+        return self.userservice_port
 
     def getRooms(self):
         return self.rooms
@@ -142,6 +157,8 @@ class Server:
         self.translator_port = builder.getTranslatorPort()
         self.rabbitmq_host = builder.getRabbitMQHost()
         self.rabbitmq_port = builder.getRabbitMQPort()
+        self.userservice_host = builder.getUserServiceHost()
+        self.userservice_port = builder.getUserServicePort()
         self.rabbit = builder.getRabbit()
         self.translator = builder.getTranslator()
         self.transcriber = builder.getTranscriber()
@@ -260,9 +277,12 @@ class Server:
         while self.redis_db.sismember("room", roomid):
             roomid = Room.generateID()
 
-        room: Room = Room(translator = self.translator, logger = self.log, kaldiTask = self.transcriber.newTask(language), id = roomid, channel = self.rabbit.newChannel("room#" + roomid))
+        room: Room = Room(translator = self.translator, logger = self.log, kaldiTask = self.transcriber.newTask(language), id = roomid, channel = self.rabbit.newChannel(roomid))
         self.redis_db.sadd("room#", roomid)
         self.rooms[room.getID()] = room
+
+        userid = params.get("userid")
+        #self.sendUserSession(userid, room.getUUID())
 
         user: User = User()
         room.getUsers().append(user)
@@ -307,7 +327,11 @@ class Server:
                 'roomid': room.getID()
             }))
 
-
+    def sendUserSession(self, userid, roomuuid):
+        data = urllib.parse.urlencode({"user_id": userid, "session_UUID": roomuuid}).encode()
+        req =  urllib.request.Request("http://" + self.userservice_host + ":" + self.userservice_port + "/user_session", data=data)
+        req.add_header('Content-Type', 'application/json')
+        resp = urllib.request.urlopen(req)
 
     #
     # deprecated

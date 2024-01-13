@@ -6,5 +6,5 @@ import org.example.TextServiceLeader.logic.Entities.TextId;
 import org.springframework.data.repository.CrudRepository;
 
 public interface LeaderTextRepository extends CrudRepository<Text, TextId> {
-    Iterable<Text> deleteBySessionId(Long sessionId);
+    Iterable<Text> deleteBySessionId(String sessionId);
 }
