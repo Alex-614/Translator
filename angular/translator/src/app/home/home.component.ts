@@ -12,7 +12,7 @@ import { RouterOutlet, RouterLink } from '@angular/router';
       <p>Translator Apllication!</p>
       <button id="btn_goLogin" class="btn_main" [routerLink]="['/login']">Log In</button>
       <p>or</p>
-      <button id="btn_goLogin" class="btn_main" [routerLink]="['/session']">Join a Session</button>
+      <button id="btn_goLogin" class="btn_main" [routerLink]="['/joinsession']">Join a Session</button>
     </main>
   `,
   styleUrl: './home.component.css'

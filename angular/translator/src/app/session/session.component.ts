@@ -1,56 +1,61 @@
 import { Component, ViewChild, ElementRef, Renderer2 } from '@angular/core';
-import { NgFor } from '@angular/common';
-import { LANGUAGES } from '../languages';
-import { DropdownModule } from 'primeng/dropdown';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-session',
   standalone: true,
-  imports: [NgFor, DropdownModule],
+  imports: [],
   template: `
     <main>
       <div class="flex-row">
-        <input type="text" placeholder="Session ID" id="ip_sessionId" #ip_sessionId>
-        <p-dropdown 
-          [options]="languages"
-          optionLabel="name">
-          <ng-template let-language pTemplate="item">
-            <div class="bg-template">
-              <div class="dropdown_list">
-                  <img src="{{ language.icon }}">  
-                  {{ language.name }}
-              </div>
-            </div>
-          </ng-template>
-        </p-dropdown>
-        <button id="btn_join" class="btn_main" (click)=join() #btn_join>Join</button>
+        <p>Session ID: </p><p id="p_sessionId" #p_sessionId></p>
       </div>
-      <p id="p_status" #p_status></p>
+      <div class="flex-row">
+        <p>Status: </p><p id="p_status" #p_status></p>
+      </div>
+      <button #btn_back class="btn_main" (click)=goBack()>Go Back</button>
       <div id="textarea">
             <p #p_text></p>
             <p #p_partial>></p>
       </div>
-      <p id="p_partial" #p_partial></p>
     </main>
   `,
   styleUrl: './session.component.css'
 })
 export class SessionComponent {
-  constructor(private renderer: Renderer2){}
-  languages = LANGUAGES;
+  sessionId: string;
+  language: string;
+  constructor(
+    private renderer: Renderer2,
+    private activatedroute: ActivatedRoute,
+    private router: Router){
+    this.activatedroute.queryParams.subscribe(params => {
+      this.sessionId = params['sessionId'];
+      this.language = params['lang'];
+  });
+  }
   private pc: any;
   private dc: any;
   private dcInterval: any;
-  @ViewChild('ip_sessionId') ip_sessionId: ElementRef<HTMLInputElement>;
-  @ViewChild('btn_join') btn_join: ElementRef<HTMLButtonElement>;
-  @ViewChild('p_text') p_text: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('p_text') p_text: ElementRef<HTMLParagraphElement>;
   @ViewChild('p_partial') p_partial: ElementRef<HTMLParagraphElement>;
   @ViewChild('p_status') p_status: ElementRef<HTMLParagraphElement>;
+  @ViewChild('p_sessionId') p_sessionId: ElementRef<HTMLParagraphElement>;
 
 
   ngOnDestroy(){
     console.log("onDestroy");
     this.stop();
+  }
+
+  ngAfterViewInit(){
+    console.log("onInit");
+    this.join();
+  }
+
+  goBack(){
+    this.stop();
+    this.router.navigate(['/joinSession']);
   }
 
   // send a webRTC connection offer and additional information to the sfu
@@ -91,7 +96,7 @@ export class SessionComponent {
     }).then(function (response: any) {
       return response.json();
     }).then((answer: any) => {
-      innerThis.renderer.setValue(innerThis.ip_sessionId.nativeElement, answer.roomid);
+      innerThis.renderer.setValue(innerThis.p_sessionId, answer.roomid);
       console.log(answer.sdp);
       return innerThis.pc.setRemoteDescription(answer);
     }).catch((e: any) => {
@@ -114,6 +119,7 @@ export class SessionComponent {
   join() {
     const innerThis = this;
     this.renderer.setProperty(this.p_status.nativeElement, 'innerHTML', "Connecting...");
+    this.renderer.setProperty(this.p_sessionId.nativeElement, 'innerHTML', this.sessionId);
 
     this.pc = new RTCPeerConnection();
 
@@ -150,7 +156,7 @@ export class SessionComponent {
         console.log('Disconnected');
       }
     }
-    this.negotiate("join?room=" + this.ip_sessionId.nativeElement.value, "en");
+    this.negotiate("join?room=" + this.sessionId, this.language);
   }
 
   // stop all streams and close the connection

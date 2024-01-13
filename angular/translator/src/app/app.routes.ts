@@ -6,6 +6,7 @@ import { RegisterComponent } from './register/register.component';
 import { SessionComponent } from './session/session.component';
 import { SessionhostComponent } from './sessionhost/sessionhost.component';
 import { AuthGuardService as AuthGuard } from './auth-guard.service';
+import { JoinsessionComponent } from './joinsession/joinsession.component';
 
 export const routes: Routes = [
     {
@@ -19,7 +20,12 @@ export const routes: Routes = [
         title: 'Login'
     },
     {
-        path: 'session',
+        path: 'joinsession',
+        component: JoinsessionComponent,
+        title: 'Join Session'
+    },
+    {
+        path: 'joinsession/session',
         component: SessionComponent,
         title: 'Session'
     },

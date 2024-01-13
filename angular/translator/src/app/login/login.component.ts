@@ -13,12 +13,12 @@ import { AuthService } from '../auth.service';
     <main>
       <form [formGroup]="form">
         <fieldset>
-          <p>Please fill out:</p>
-          <p>Email: <input id="ip_email" name="email" class="ip_main" formControlName="email"></p>
-          <p>Password: <input id="ip_password" name="password" class="ip_main" formControlName="password" type="password"></p>
-          <button id="btn_Login" class="btn_main" (click)=login()>Log In</button>
+          <p class="item1">Please fill out:</p>
+          <p class="item2">Email: <input id="ip_email" name="email" class="ip_main item2" formControlName="email"></p>
+          <p class="item2">Password: <input id="ip_password" name="password" class="ip_main item2" formControlName="password" type="password"></p>
+          <button id="btn_Login" class="btn_main item1" (click)=login()>Log In</button>
 
-          <p>If you do not have a account: <a [routerLink] = "['/login/register']">Register</a></p>
+          <div><p>If you do not have a account: <a [routerLink] = "['/login/register']">Register</a></p></div>
         </fieldset>
       </form>
     </main>

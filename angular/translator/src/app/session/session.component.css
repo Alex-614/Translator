@@ -1,42 +1,24 @@
 main{
-    margin-top: 3em;
+    margin-top: 2rem;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
     font-family:Arial;
-	font-size:1rem;
+	font-size:2rem;
 	font-weight:bold;
 }
 
 main p{
 	color: white;
-	text-shadow: 1px 1px 1px #3d768a;
+	text-shadow: 2px 2px 1px #3d768a;
 	text-align: center;
-	margin: 0px;
+	margin-right: 1rem;
+	margin-top: 0px;
 }
 
-main p-dropdown {
+.flex-row{
 	display: flex;
-	background-color: white;
-	color: black;
-	text-align: center;
-	width: 10rem;
-	height: 2rem;
-	font-size: 1.5rem;
-	padding: 10px;
-	border-radius: 8px;
-	border-width: 0px;
-}
-
-main p-dropdown img {
-	width: 18px;
-}
-
-#ip_sessionId {
-	width: 10rem;
-	height: 3rem;
-	font-size: 1.5rem;
-	border-radius: 8px;
+	flex-direction: row;
 }
 
 #textarea {
@@ -45,20 +27,13 @@ main p-dropdown img {
 	border-width: 0px;
 	border-radius: 10px;
     background-color: white;
+	overflow-y: auto;
 }
 
 #textarea p {
     color: black;
     text-shadow: none;
     font-size: 1rem;
-}
-
-.flex-row {
-	display: flex;
-	flex-direction: row;
-	justify-content: center;
-	align-items: baseline;
-	margin-bottom: 2rem;
 }
 
 .bg-template {
@@ -79,7 +54,7 @@ main p-dropdown img {
     font-weight: bold;
 	font-size:1.5rem;
     padding: 10px 10px;
-    margin-left: 1rem;
+	margin-bottom: 1rem;
 	text-decoration:none;
 	text-shadow:2px 2px 1px #3d768a;
 }

@@ -1,5 +1,6 @@
 import { Component, ViewChild, ElementRef, Renderer2 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 
 @Component({
     selector: 'app-sessionhost',
@@ -10,16 +11,17 @@ import { ActivatedRoute } from '@angular/router';
         <div class="flex-row">
             <p>Room ID:</p><p #p_roomId></p>
             <p>Status:</p><p #p_status></p>
+        </div>
+        <div class="flex-row">
             <button #btn_start class="btn_main" (click)=create()>Start</button>
             <button #btn_stop class="btn_main d-none" (click)=stop()>Stop</button>
+            <button #btn_back class="btn_main" (click)=goBack()>Go Back</button>
         </div>
         <div id="textarea">
             <p #p_text></p>
             <p #p_partial>></p>
         </div>
     </main>
-    <!--<input #ip_roomId placeholder="Enter RoomID" class="ip_main">
-    <button (click)=join() class="btn_main">Join</button>-->
   `,
     styleUrl: './sessionhost.component.css'
 })
@@ -28,7 +30,8 @@ export class SessionhostComponent {
     private language: string;
     constructor(
         private renderer: Renderer2,
-        private activatedroute: ActivatedRoute) {
+        private activatedroute: ActivatedRoute,
+        private router: Router) {
         this.activatedroute.queryParams.subscribe(params => {
             this.userId = params['userId'];
             this.language = params['lang'];
@@ -48,6 +51,11 @@ export class SessionhostComponent {
     ngOnDestroy(){
         console.log("onDestroy");
         this.stop();
+    }
+
+    goBack(){
+        this.stop();
+        this.router.navigate(['/login/account'], {queryParams: { userId: this.userId }});
     }
 
     btn_show_stop() {
