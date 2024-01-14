@@ -60,29 +60,29 @@ class Room:
         # iterate all users
         for user in self.users:
             try:
-                if not "closed" in user.getDataChannel().readyState:
-                    if cache.get(user.getLanguage()) == None:
-                        if partial != None and partial != "":
-                            if self.translator == None:
-                                translated = json.dumps({"partial": partial})
-                            else:
-                                # translate partial
-                                translated = json.dumps({"partial": self.translator.translate(q = partial, source = language, target = user.getLanguage(), timeout = 100)})
-                        elif text != None and text != "":
-                            if self.translator == None:
-                                translated = json.dumps({"text": text})
-                            else:
-                                # translate text
-                                translated = json.dumps({"text": self.translator.translate(q = text, source = language, target = user.getLanguage(), timeout = 100)})
-                        cache[user.getLanguage()] = translated
-                    else:
-                        translated = cache.get(user.getLanguage())
-                    self.log.debug("sending to: " + user.getLanguage() + "; translated: '" + str(translated) + "'")
-                    # send to user
-                    if user.getDataChannel() != None:
+                if user.getDataChannel() != None:
+                    if not "closed" in user.getDataChannel().readyState:
+                        if cache.get(user.getLanguage()) == None:
+                            if partial != None and partial != "":
+                                if self.translator == None:
+                                    translated = json.dumps({"partial": partial})
+                                else:
+                                    # translate partial
+                                    translated = json.dumps({"partial": self.translator.translate(q = partial, source = language, target = user.getLanguage(), timeout = 100)})
+                            elif text != None and text != "":
+                                if self.translator == None:
+                                    translated = json.dumps({"text": text})
+                                else:
+                                    # translate text
+                                    translated = json.dumps({"text": self.translator.translate(q = text, source = language, target = user.getLanguage(), timeout = 100)})
+                            cache[user.getLanguage()] = translated
+                        else:
+                            translated = cache.get(user.getLanguage())
+                        self.log.debug("sending to: " + user.getLanguage() + "; translated: '" + str(translated) + "'")
+                        # send to user
                         user.getDataChannel().send(translated)
-                    else:
-                        self.log.debug("user datachannel == None")
+                else:
+                    self.log.debug("user datachannel == None")
             except Exception as e:
                 self.log.error("error while sending: " + str(e))
 
