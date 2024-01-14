@@ -39,7 +39,7 @@ function negotiate(uri_append, language) { // setup connection
     }).then(function () {
         var offer = pc.localDescription;
         console.log(offer.sdp);
-        return fetch('http://127.0.0.1:8081/' + uri_append, { // fetch request offer from server [url here]
+        return fetch('http://127.0.0.1:8080/' + uri_append, { // fetch request offer from server [url here]
             body: JSON.stringify({
                 sdp: offer.sdp,
                 type: offer.type,
