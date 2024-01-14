@@ -13,6 +13,10 @@ public class APIGatewayConfig {
                 //angular-application route
                 .route("angular-application", r -> r.path("/")
                         .uri("http://angular-application:80"))
+                .route("angular-application_polyfills", r -> r.path("/polyfills-LZBJRJJE.js")
+                        .uri("http://angular-application:80"))
+                .route("angular-application_main", r -> r.path("/main-MJG5HZ7Q.js")
+                        .uri("http://angular-application:80"))
                 //UserService route
                 .route("UserService", r -> r.path("/user/**")
                         .uri("http://UserService:8080"))
