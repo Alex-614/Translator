@@ -53,7 +53,7 @@ services:
       start_period: 1m
       start_interval: 5s
     volumes:
-      - transcription_db:/data
+      - transcription_redis:/data
 
   translation:
     container_name: translation
@@ -67,6 +67,8 @@ services:
     #ports:
     #  - "5000:5000"
     restart: on-failure
+    volumes:
+      - translation:/data
     healthcheck:
       test: ["CMD-SHELL", "./venv/bin/python scripts/healthcheck.py"]
       interval: 30s
@@ -230,8 +232,8 @@ services:
 
 
 volumes:
-  transcription_db:
-    name: translator_transcription_db
+  transcription_redis:
+  translation:
 
 networks:
   UserServiceNetwork:
