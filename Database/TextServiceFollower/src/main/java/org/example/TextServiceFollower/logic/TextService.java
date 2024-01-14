@@ -4,8 +4,8 @@ import org.example.TextServiceFollower.logic.Entities.Text;
 import org.example.TextServiceFollower.logic.Repositories.FollowerTextRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+//service to connect to the database (read-only)
 @Service
 public class TextService implements TextPort {
 

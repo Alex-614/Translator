@@ -5,6 +5,7 @@ import lombok.Getter;
 import java.io.Serializable;
 import java.sql.Timestamp;
 
+//represents the composite primary key as class, so it works with JPA
 @Getter
 public class TextId implements Serializable {
     private String sessionId;

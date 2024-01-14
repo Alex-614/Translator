@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.sql.Timestamp;
 import java.time.Instant;
 
+//adapter to connect to queue on RabbitMQ
 @Component
 public class MessageAdapter {
     private final LeaderTextRepository leaderTextRepository;
@@ -19,14 +20,14 @@ public class MessageAdapter {
     public MessageAdapter(LeaderTextRepository leaderTextRepository) {
         this.leaderTextRepository = leaderTextRepository;
     }
+
+    //convert received String back to JSON and create Text entity to save it to database
     @RabbitListener(queues = "room_queue")
     public void receiveMessage(String message) {
         JSONObject json = new JSONObject(message);
         Timestamp timestamp = Timestamp.from(Instant.now());
         TextId textId = new TextId(json.getString("uuid"), timestamp);
         Text text = new Text(textId, json.getString("text"));
-        System.out.println(json);
-        System.out.println(json.getString("uuid"));
         leaderTextRepository.save(text);
     }
 }

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+//service for CRUD operations in database (user + user_session)
 @Service
 public class UserService implements UserPort {
     private final UserRepository userRepository;
@@ -28,6 +29,11 @@ public class UserService implements UserPort {
         this.userSessionRepository = userSessionRepository;
     }
 
+    ///////////////////////////////////////
+    //Database operations for user entity//
+    ///////////////////////////////////////
+
+    //save user to database
     @Override
     public User createUser(String name, String email, String password) throws DuplicateEmailException, DatabaseException {
         User u = new User(name, email, password);
@@ -46,32 +52,25 @@ public class UserService implements UserPort {
         }
     }
 
-    @Override
-    public User_Session createUserToSession(Long user_id, String session_UUID) {
-        User_Session us = new User_Session(user_id, session_UUID);
-        return userSessionRepository.save(us);
-    }
-
+    //get user from database by id
     @Override
     public Optional<User> getUser(Long userId) {
         return userRepository.findById(userId);
     }
 
-    @Override
-    public Iterable<User_Session> getAllSessions(Long userId) {
-        return userSessionRepository.findByUserId(userId);
-    }
-
+    //get all users from database
     @Override
     public Iterable<User> getAllUsers(){
         return userRepository.findAll();
     }
 
+    //get user from database by email
     @Override
     public Iterable<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
 
+    //patch user to database
     @Override
     public User patchUser(Long id, User patchedUser) {
         User existingUser = userRepository.findById(id).orElse(null);
@@ -82,6 +81,7 @@ public class UserService implements UserPort {
         return null;
     }
 
+    //delete user from database
     @Override
     public boolean deleteUser(Long userId){
         if(userRepository.existsById(userId)){
@@ -91,6 +91,7 @@ public class UserService implements UserPort {
         return false;
     }
 
+    //helper method for patchUser
     private static String[] getNullPropertyNames(Object source) {
         final BeanWrapper src = new BeanWrapperImpl(source);
         java.beans.PropertyDescriptor[] pds = src.getPropertyDescriptors();
@@ -105,5 +106,22 @@ public class UserService implements UserPort {
 
         String[] result = new String[emptyNames.size()];
         return emptyNames.toArray(result);
+    }
+
+    ///////////////////////////////////////////////
+    //Database operations for user_session entity//
+    ///////////////////////////////////////////////
+
+    //get all sessions created by a user (by user id)
+    @Override
+    public Iterable<User_Session> getAllSessions(Long userId) {
+        return userSessionRepository.findByUserId(userId);
+    }
+
+    //create entry in database to map created sessions to user
+    @Override
+    public User_Session createUserToSession(Long user_id, String session_UUID) {
+        User_Session us = new User_Session(user_id, session_UUID);
+        return userSessionRepository.save(us);
     }
 }
