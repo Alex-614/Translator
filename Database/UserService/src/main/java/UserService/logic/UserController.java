@@ -13,7 +13,6 @@ import java.util.Optional;
 
 //REST controller to save and get user/user_session entity
 @RestController
-@CrossOrigin(origins = "http://angular-application:80")
 public class UserController {
     private final UserPort myUserPort;
 

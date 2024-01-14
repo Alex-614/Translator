@@ -40,6 +40,8 @@ export class RegisterComponent {
       password: ['', Validators.required],
       passwordRepeat: ['', Validators.required],
     })
+    console.log(window.location.href);
+    console.log(location.host);
   }
   @ViewChild('p_error') p_error: ElementRef<HTMLParagraphElement>;
   async callRegister(): Promise<boolean> {

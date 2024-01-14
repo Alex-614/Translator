@@ -93,11 +93,12 @@ export class SessionhostComponent {
             var offer = innerThis.pc.localDescription;
             console.log(offer.sdp);
             console.log(uri_append);
-            return fetch('http://127.0.0.1:2700/' + uri_append, { // fetch request offer from server [url here]
+            return fetch('http://' + window.location.host + '/' + uri_append, { // fetch request offer from server [url here]
                 body: JSON.stringify({
                     sdp: offer.sdp,
                     type: offer.type,
-                    language: language
+                    language: language,
+                    userid: this.userId
                 }),
                 headers: {
                     'Content-Type': 'application/json'
