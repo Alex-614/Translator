@@ -5,6 +5,7 @@ WORKDIR /webserver
 COPY webserver.py ./
 COPY index.html ./
 COPY styles.css ./
+COPY login.css ./
 COPY client.js ./
 
 COPY requirements.txt ./
