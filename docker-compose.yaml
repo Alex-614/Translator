@@ -166,7 +166,7 @@ services:
       text_service_db_leader:
         condition: service_healthy
 
-  # TextServiceGateway
+  # API Gateway
   api_gateway:
     build:
       context: ./APIGateway/
@@ -212,8 +212,8 @@ services:
     networks:
       - TextServiceNetwork
       - UserServiceNetwork
-    ports:
-      - "9090:9090"
+  #  ports:
+  #    - "9090:9090"
 
 
   #angular-application:

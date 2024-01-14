@@ -12,7 +12,7 @@ public class APIGatewayConfig {
         return builder.routes()
                 //angular-application route
                 .route("angular-application", r -> r.path("/")
-                        .uri("http://angular-application:9090"))
+                        .uri("http://angular-application:80"))
                 //UserService route
                 .route("UserService", r -> r.path("/user/**")
                         .uri("http://UserService:8080"))
