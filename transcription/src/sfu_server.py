@@ -199,7 +199,7 @@ class Server:
 
 
     #
-    # join a existing room
+    # join an existing room
     # the request should contain the roomid, of the room the user wants to join and the language, the transribed text will be translated to
     # besides the request should contain the webRTC connection offer ('sdp' & 'type')
     # 
@@ -261,7 +261,7 @@ class Server:
     # the response contains the webRTC connection answer and the roomid
     #
     # the webRTC connection consists of the audio track for sending the speech of the user and a datachannel for sending the transcription (same language as spoken)
-    # 
+    #
     async def create(self, request):
         params = await request.json()
 
@@ -274,11 +274,11 @@ class Server:
             type=params['type'])
         
         roomid = Room.generateID()
-        while self.redis_db.sismember("room", roomid):
+        while self.redis_db.sismember("rooms", roomid):
             roomid = Room.generateID()
 
         room: Room = Room(translator = self.translator, logger = self.log, kaldiTask = self.transcriber.newTask(language), id = roomid, channel = self.rabbit.newChannel(roomid))
-        self.redis_db.sadd("room#", roomid)
+        self.redis_db.sadd("rooms", roomid)
         self.rooms[room.getID()] = room
 
         userid = params.get("userid")
@@ -303,7 +303,8 @@ class Server:
         async def on_iceconnectionstatechange():
             if pc.iceConnectionState == 'failed':
                 await room.close()
-                self.rooms.pop(room.id)
+                self.redis_db.srem("rooms", room.getID())
+                self.rooms.pop(room.getID())
                 await pc.close()
 
         @pc.on('track')
