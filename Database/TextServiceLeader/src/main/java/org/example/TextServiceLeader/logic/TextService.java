@@ -5,10 +5,8 @@ import org.example.TextServiceLeader.logic.Entities.TextId;
 import org.example.TextServiceLeader.logic.Repositories.LeaderTextRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
-import java.time.Instant;
 
 
 //Service to connect to database for CRUD operations
