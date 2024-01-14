@@ -4,6 +4,7 @@ import org.example.TextServiceFollower.logic.Entities.Text;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+//RestController only-read API for follower database
 @RestController
 public class TextController {
     public final TextPort textPort;

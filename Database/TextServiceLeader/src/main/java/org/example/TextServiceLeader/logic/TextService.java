@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.Timestamp;
 import java.time.Instant;
 
+
+//Service to connect to database for CRUD operations
 @Service
 public class TextService implements TextPort {
 

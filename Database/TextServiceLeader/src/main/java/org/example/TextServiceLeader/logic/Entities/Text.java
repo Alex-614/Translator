@@ -6,12 +6,14 @@ import lombok.Setter;
 
 import java.sql.Timestamp;
 
+//represents the text entity from the database
 @Entity
 @IdClass(TextId.class)
 @Table(name = "Text")
 @Getter
 @Setter
 public class Text {
+    //composite primary key (sessionId, timestamp)
     @Id
     @Column(name = "session_id")
     private String sessionId;

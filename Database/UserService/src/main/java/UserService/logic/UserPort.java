@@ -7,6 +7,7 @@ import UserService.logic.Exceptions.DuplicateEmailException;
 
 import java.util.Optional;
 
+//port for user/user_service table
 public interface UserPort {
     User createUser(String name, String email, String password) throws DuplicateEmailException, DatabaseException;
     User_Session createUserToSession(Long user_id, String session_UUID);
