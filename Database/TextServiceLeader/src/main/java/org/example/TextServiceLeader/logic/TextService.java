@@ -25,10 +25,4 @@ public class TextService implements TextPort {
         TextId textId = new TextId(sessionUUID, timestamp);
         return leaderTextRepository.save(new Text(textId, textLine));
     }
-
-
-    @Override
-    public Iterable<Text> deleteSessionText(String sessionId) {
-        return leaderTextRepository.deleteBySessionId(sessionId);
-    }
 }
