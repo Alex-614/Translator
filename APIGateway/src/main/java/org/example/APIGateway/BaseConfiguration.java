@@ -1,4 +1,4 @@
-package org.example.TextServiceGateway;
+package org.example.APIGateway;
 
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;

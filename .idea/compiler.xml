@@ -8,6 +8,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="TextServiceGateway" />
+        <module name="APIGateway" />
         <module name="UserService" />
         <module name="TextService" />
         <module name="TextServiceLeader" />
@@ -20,6 +21,7 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="APIGateway" options="-parameters" />
       <module name="TextService" options="-parameters" />
       <module name="TextServiceFollower" options="-parameters" />
       <module name="TextServiceGateway" options="-parameters" />

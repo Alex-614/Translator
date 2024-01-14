@@ -18,4 +18,9 @@ public class TextController {
     public Iterable<Text> getSessionText(@PathVariable String sessionId) {
         return textPort.getSessionText(sessionId);
     }
+
+    @GetMapping("/text")
+    public Iterable<Text> getAllSessions() {
+        return textPort.getAllSessions();
+    }
 }

@@ -12,6 +12,7 @@
         <option value="$PROJECT_DIR$/Database/TextServiceGateway/pom.xml" />
         <option value="$PROJECT_DIR$/Database/TextServiceLeader/pom.xml" />
         <option value="$PROJECT_DIR$/Database/TextServiceFollower/pom.xml" />
+        <option value="$PROJECT_DIR$/APIGateway/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">

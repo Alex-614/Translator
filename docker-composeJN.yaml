@@ -42,8 +42,8 @@ services:
     networks:
       - TextServiceNetwork
     image: redis
-    ports:
-      - "6379:6379"
+    #ports:
+    #  - "6379:6379"
     restart: on-failure
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
@@ -64,8 +64,8 @@ services:
       context: ./translation
       dockerfile: Dockerfile
     image: translator-translation
-    ports:
-      - "5000:5000"
+    #ports:
+    #  - "5000:5000"
     restart: on-failure
     healthcheck:
       test: ["CMD-SHELL", "./venv/bin/python scripts/healthcheck.py"]
@@ -93,9 +93,9 @@ services:
     volumes:
       - ./init/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
       - ./init/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+    #ports:
+    #  - "5672:5672"
+    #  - "15672:15672"
     restart: on-failure
     healthcheck:
       test: rabbitmq-diagnostics -q ping
@@ -124,8 +124,8 @@ services:
     build:
       context: ./Database/UserService
       dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
+    #ports:
+    #  - "8080:8080"
     container_name: UserService
     networks:
       - UserServiceNetwork
@@ -165,15 +165,16 @@ services:
         condition: service_healthy
 
   # TextServiceGateway
-  text_service_gateway:
+  api_gateway:
     build:
-      context: ./Database/TextServiceGateway
+      context: ./APIGateway/
       dockerfile: Dockerfile
     ports:
       - "8081:8081"
-    container_name: TextServiceGateway
+    container_name: APIGateway
     networks:
       - TextServiceNetwork
+      - UserServiceNetwork
     depends_on:
       - text_service_follower
 
@@ -201,19 +202,31 @@ services:
       text_service_db_follower:
         condition: service_healthy
 
-  angular-application:
-    container_name: angular-application
-    hostname: angular-application
+  test-webserver:
+    build:
+      context: ./webserver
+      dockerfile: Dockerfile
+    container_name: test-webserver
     networks:
       - TextServiceNetwork
       - UserServiceNetwork
-    build:
-      context: ./angular/translator
-      dockerfile: Dockerfile
-    image: angular-application
     ports:
-      - "9090:80"
-    restart: on-failure
+      - "9090:9090"
+
+
+  #angular-application:
+  #  container_name: angular-application
+  #  hostname: angular-application
+  #  networks:
+  #    - TextServiceNetwork
+  #    - UserServiceNetwork
+  #  build:
+  #    context: ./angular/translator
+  #    dockerfile: Dockerfile
+  #  image: angular-application
+  #  ports:
+  #    - "9090:80"
+  #  restart: on-failure
 
 
 volumes:
@@ -225,6 +238,3 @@ networks:
     driver: bridge
   TextServiceNetwork:
     driver: bridge
-
-
-
