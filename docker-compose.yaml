@@ -13,8 +13,8 @@ services:
       context: ./transcription
       dockerfile: Dockerfile
     image: translator-transcription
-    ports:
-      - "2700:2700"
+    #ports:
+    #  - "2700:2700"
     depends_on:
       transcription_redis:
         condition: service_healthy
@@ -216,19 +216,19 @@ services:
   #    - "9090:9090"
 
 
-  #angular-application:
-  #  container_name: angular-application
-  #  hostname: angular-application
-  #  networks:
-  #    - TextServiceNetwork
-  #    - UserServiceNetwork
-  #  build:
-  #    context: ./angular/translator
-  #    dockerfile: Dockerfile
-  #  image: angular-application
-  #  ports:
-  #    - "9090:80"
-  #  restart: on-failure
+  angular-application:
+    container_name: angular-application
+    hostname: angular-application
+    networks:
+      - TextServiceNetwork
+      - UserServiceNetwork
+    build:
+      context: ./angular/translator
+      dockerfile: Dockerfile
+    image: angular-application
+    ports:
+      - "9090:80"
+    restart: on-failure
 
 
 volumes:
