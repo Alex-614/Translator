@@ -1,9 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterOutlet, RouterLink, Router } from '@angular/router';
-import { User } from '../user';
 import { UserService } from '../user.service';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-login',
@@ -29,7 +27,6 @@ export class LoginComponent {
   form: FormGroup;
   constructor(
     private fb: FormBuilder,
-    /*private authService: AuthService,*/
     private userService: UserService,
     private router: Router) {
     this.form = this.fb.group({
@@ -37,6 +34,8 @@ export class LoginComponent {
       password: ['', Validators.required]
     });
   }
+
+  //login method (only checks for correct password in plain text)
   login() {
     const val = this.form.value;
     if (val.email && val.password) {

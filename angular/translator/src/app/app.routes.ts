@@ -5,7 +5,6 @@ import { LoginComponent } from './login/login.component';
 import { RegisterComponent } from './register/register.component';
 import { SessionComponent } from './session/session.component';
 import { SessionhostComponent } from './sessionhost/sessionhost.component';
-import { AuthGuardService as AuthGuard } from './auth-guard.service';
 import { JoinsessionComponent } from './joinsession/joinsession.component';
 
 export const routes: Routes = [

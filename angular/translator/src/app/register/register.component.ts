@@ -33,18 +33,23 @@ export class RegisterComponent {
     private fb: FormBuilder,
     private router: Router,
     private renderer: Renderer2
-  ) { 
+  ) {
     this.form = this.fb.group({
       username: ['', Validators.required],
       email: ['', Validators.required],
       password: ['', Validators.required],
       passwordRepeat: ['', Validators.required],
-    })
-    console.log(window.location.href);
-    console.log(location.host);
+    });
   }
+
   @ViewChild('p_error') p_error: ElementRef<HTMLParagraphElement>;
-  async callRegister(): Promise<boolean> {
+
+  /**
+   * register method
+   * checks all form fields and calls register function in userService
+   * afterwards checks if the answered user data from the rest server is correct 
+   */
+  callRegister() {
     const val = this.form.value;
     if (val.username != "" && val.email != "" && val.password != "" && val.passwordRepeat != "") {
       if (val.password == val.passwordRepeat) {
@@ -56,18 +61,19 @@ export class RegisterComponent {
         this.userService.register(this.user).subscribe(
           data => {
             console.log(data);
-            /**TODO.... nicer if statement and look if username already exists?? in Rest!!!*/
             if (data.name == val.username && data.email == val.email && data.password == val.password) {
               this.router.navigate(['/login', {}]);
             }
           }
         );
-      } else {
+      } 
+      
+      //Error printouts according registration form
+      else {
         this.renderer.setProperty(this.p_error.nativeElement, 'innerHTML', "Error: Passwords do not match!");
       }
     } else {
       this.renderer.setProperty(this.p_error.nativeElement, 'innerHTML', "Error: Please fill every field!");
     }
-    return true;
   }
 }

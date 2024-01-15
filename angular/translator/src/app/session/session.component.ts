@@ -43,16 +43,19 @@ export class SessionComponent {
   @ViewChild('p_sessionId') p_sessionId: ElementRef<HTMLParagraphElement>;
 
 
+  //when user leaves the session page close the webrtc connection
   ngOnDestroy(){
     console.log("onDestroy");
     this.stop();
   }
 
+  //after web view is initialized join webrtc session
   ngAfterViewInit(){
-    console.log("onInit");
+    console.log("afterViewInit");
     this.join();
   }
 
+  //navigate back function
   goBack(){
     this.stop();
     this.router.navigate(['/joinSession']);
@@ -74,7 +77,6 @@ export class SessionComponent {
               resolve();
             }
           }
-
           innerThis.pc.addEventListener('icegatheringstatechange', checkState);
         }
       });
@@ -96,7 +98,7 @@ export class SessionComponent {
     }).then(function (response: any) {
       return response.json();
     }).then((answer: any) => {
-      innerThis.renderer.setValue(innerThis.p_sessionId, answer.roomid);
+      innerThis.renderer.setValue(innerThis.p_sessionId, answer.roomid); //set answered room id to ui
       console.log(answer.sdp);
       return innerThis.pc.setRemoteDescription(answer);
     }).catch((e: any) => {
@@ -104,6 +106,7 @@ export class SessionComponent {
     });
   }
 
+  //receive full text paragraph (optimized semantics)
   performRecvText(str: string) {
     var htmlStr = this.p_text.nativeElement.innerHTML;
     htmlStr += '<div>' + str + '</div>\n';
@@ -111,6 +114,7 @@ export class SessionComponent {
     this.renderer.setProperty(this.p_partial.nativeElement, 'innerHTML', "> ");
   }
 
+  //receive partial of text paragraph (instant)
   performRecvPartial(str: string) {
     this.renderer.setProperty(this.p_partial.nativeElement, 'innerHTML', "> " + str);
   }
@@ -176,7 +180,7 @@ export class SessionComponent {
         });
     }
 
-    // close local audio / video
+    // close local audio
     this.pc.getSenders().forEach(function (sender: { track: { stop: () => void; }; }) {
         sender.track.stop();
     });

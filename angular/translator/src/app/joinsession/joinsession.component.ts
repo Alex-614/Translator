@@ -42,6 +42,7 @@ export class JoinsessionComponent {
   
   @ViewChild('ip_sessionId') ip_sessionId: ElementRef<HTMLInputElement>;
 
+  //navigate to session component with id and language parameters
   join(){
     this.router.navigate(['/joinsession/session'], { queryParams: { sessionId: this.ip_sessionId.nativeElement.value, lang: this.selectedLanguage.short } });
   }

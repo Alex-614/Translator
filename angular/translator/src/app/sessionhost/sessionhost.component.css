@@ -59,12 +59,14 @@ main p{
 	border-radius: 10px;
     background-color: white;
 	overflow-y: auto;
+	white-space: pre-wrap;
 }
 
 #textarea p {
     color: black;
     text-shadow: none;
     font-size: 1rem;
+	white-space: pre-wrap;
 }
 
 .bg-template {

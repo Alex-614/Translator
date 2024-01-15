@@ -8,13 +8,6 @@ main{
 	font-weight:bold;
 }
 
-main p{
-	color: white;
-	text-shadow: 2px 2px 1px #3d768a;
-	text-align: center;
-	margin: 0px;
-}
-
 main p-dropdown {
 	display: flex;
 	background-color: white;
@@ -29,6 +22,30 @@ main p-dropdown {
 
 main p-dropdown img {
 	width: 18px;
+}
+
+.p_big {
+	color: white;
+	text-shadow: 2px 2px 1px #3d768a;
+	text-align: center;
+	margin: 0px;
+}
+
+.p_small{
+	padding-top: 1rem;
+	font-size: 1rem;
+	color: white;
+	text-shadow: 2px 2px 1px #3d768a;
+	text-align: center;
+	margin: 0px;
+}
+
+.p_textDownload {
+	font-size: 1rem;
+	color: black;
+	text-shadow: none;
+	padding-left: 1rem;
+	padding-right: 1rem;
 }
 
 .bg-template {
@@ -61,4 +78,10 @@ main p-dropdown img {
 .btn_main:active {
 	position:relative;
 	top:1px;
+}
+
+#div_sessionList {
+	margin-top: 1rem;
+	background-color: white;
+	border-radius: 8px;
 }

@@ -16,6 +16,7 @@ import { Router } from '@angular/router';
             <button #btn_start class="btn_main" (click)=create()>Start</button>
             <button #btn_stop class="btn_main d-none" (click)=stop()>Stop</button>
             <button #btn_back class="btn_main" (click)=goBack()>Go Back</button>
+            <button #btn_download class="btn_main" (click)=download()>Download Text</button>
         </div>
         <div id="textarea">
             <p #p_text></p>
@@ -45,17 +46,32 @@ export class SessionhostComponent {
     @ViewChild('p_status') p_status: ElementRef<HTMLParagraphElement>;
     @ViewChild('p_roomId') p_roomId: ElementRef<HTMLParagraphElement>;
     @ViewChild('ip_roomId') ip_roomId: ElementRef<HTMLInputElement>;
-    @ViewChild('p_text') p_text: ElementRef<HTMLParagraphElement>;
-    @ViewChild('p_partial') p_partial: ElementRef<HTMLParagraphElement>;
+    @ViewChild('p_text') p_text: ElementRef<HTMLDivElement>;
+    @ViewChild('p_partial') p_partial: ElementRef<HTMLDivElement>;
 
-    ngOnDestroy(){
+
+    //when user leaves the session page close the webrtc connection
+    ngOnDestroy() {
         console.log("onDestroy");
         this.stop();
     }
 
-    goBack(){
-        this.stop();
-        this.router.navigate(['/login/account'], {queryParams: { userId: this.userId }});
+    //navigate back function
+    goBack() {
+        this.router.navigate(['/login/account'], { queryParams: { userId: this.userId } });
+    }
+
+    //downloads the transcribed text as txt file
+    download() {
+        var text = this.p_text.nativeElement.innerHTML;
+        var filename = "Transkription.txt";
+        var downloadEle = document.createElement('a');
+        downloadEle.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+        downloadEle.setAttribute('download', filename, );
+        downloadEle.style.display = 'none';
+        document.body.appendChild(downloadEle);
+        downloadEle.click();
+        document.body.removeChild(downloadEle);
     }
 
     btn_show_stop() {
@@ -117,13 +133,15 @@ export class SessionhostComponent {
         });
     }
 
+    //receive full text paragraph (optimized semantics)
     performRecvText(str: string) {
         var htmlStr = this.p_text.nativeElement.innerText;
-        htmlStr += '<div>' + str + '</div>\n';
+        htmlStr += str + ". ";
         this.renderer.setProperty(this.p_text.nativeElement, 'innerHTML', htmlStr);
         this.renderer.setProperty(this.p_partial.nativeElement, 'innerHTML', "> ");
     }
 
+    //receive partial of text paragraph (instant)
     performRecvPartial(str: string) {
         this.renderer.setProperty(this.p_partial.nativeElement, 'innerHTML', "> " + str);
     }
@@ -205,7 +223,7 @@ export class SessionhostComponent {
             });
         }
 
-        // close local audio / video
+        // close local audio
         this.pc.getSenders().forEach(function (sender: { track: { stop: () => void; }; }) {
             sender.track.stop();
         });
