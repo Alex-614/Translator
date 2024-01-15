@@ -7,7 +7,7 @@ import { RouterOutlet, RouterLink } from '@angular/router';
   imports: [RouterOutlet, RouterLink],
   template: `
     <main>
-      <img src="/static/assets/Icon.png" alt="Icon">
+      <img src="/assets/Icon.png" alt="Icon">
       <p>Welcome to the</p>
       <p>Translator Apllication!</p>
       <button id="btn_goLogin" class="btn_main" [routerLink]="['/login']">Log In</button>

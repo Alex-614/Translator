@@ -1,14 +1,15 @@
 version: "3.8"
 
-
+name: translator
 
 services:
+
+  # Transcription Service
   transcription:
     container_name: transcription
     hostname: transcription
     networks:
-      - UserServiceNetwork
-      - TextServiceNetwork
+      - translator-backnet
     build:
       context: ./transcription
       dockerfile: Dockerfile
@@ -18,11 +19,18 @@ services:
     depends_on:
       transcription_redis:
         condition: service_healthy
-      translation:
-        condition: service_healthy
       transcription_rabbitmq:
         condition: service_healthy
+      translation:
+        condition: service_healthy
     restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://transcription:2700/healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 2
+      start_period: 1m
+      start_interval: 5s
     environment:
       - TRANSCRIPTION_DEBUGMODE=True
       - TRANSLATION_HOST=translation
@@ -36,15 +44,19 @@ services:
       - TRANSCRIPTION_PORT=2700
       - VOSK_MODEL_PATHS={"en":"models/vosk-model-en-us-0.22","de":"models/vosk-model-de-0.21"}
 
+  # Redis for joinids from Transcription Service
   transcription_redis:
     container_name: transcription_redis
     hostname: transcription_redis
     networks:
-      - TextServiceNetwork
+      - translator-backnet
+    volumes:
+      - transcription_redis:/data
     image: redis
     #ports:
     #  - "6379:6379"
     restart: on-failure
+    command: [sh, -c, "rm -f /data/dump.rdb && redis-server"]
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
       interval: 30s
@@ -52,14 +64,13 @@ services:
       retries: 2
       start_period: 1m
       start_interval: 5s
-    volumes:
-      - transcription_redis:/data
 
+  # Libretranslate
   translation:
     container_name: translation
     hostname: translation
     networks:
-      - TextServiceNetwork
+      - translator-backnet
     build:
       context: ./translation
       dockerfile: Dockerfile
@@ -85,14 +96,15 @@ services:
       - LT_DEBUG=false
     #  - TRANSCRIPTION_DEBUGMODE=False
 
-
+  # RabbitMQ for Transcription to TextServiceLeader
   transcription_rabbitmq:
     container_name: transcription_rabbitmq
     hostname: transcription_rabbitmq
     networks:
-      - TextServiceNetwork
+      - translator-backnet
     image: rabbitmq:management
     volumes:
+      - transcription_rabbitmq:/var/lib/rabbitmq
       - ./init/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
       - ./init/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
     #ports:
@@ -114,7 +126,10 @@ services:
       dockerfile: Dockerfile
     container_name: UserServiceDB
     networks:
-      - UserServiceNetwork
+      - translator-backnet
+    volumes:
+      - userservice_db:/var/lib/postgresql/data
+    restart: on-failure
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
@@ -130,7 +145,8 @@ services:
     #  - "8080:8080"
     container_name: UserService
     networks:
-      - UserServiceNetwork
+      - translator-backnet
+    restart: on-failure
     depends_on:
       user_service_db:
         condition: service_healthy
@@ -142,7 +158,10 @@ services:
       dockerfile: Leader.Dockerfile
     container_name: TextServiceDBLeader
     networks:
-      - TextServiceNetwork
+      - translator-backnet
+    volumes:
+      - textservice_dbleader:/var/lib/postgresql/data
+    restart: on-failure
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
@@ -156,7 +175,10 @@ services:
       dockerfile: Follower.Dockerfile
     container_name: TextServiceDBFollower
     networks:
-      - TextServiceNetwork
+      - translator-backnet
+    volumes:
+      - textservice_dbfollower:/var/lib/postgresql/data
+    restart: on-failure
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
@@ -166,20 +188,6 @@ services:
       text_service_db_leader:
         condition: service_healthy
 
-  # API Gateway
-  api_gateway:
-    build:
-      context: ./APIGateway/
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    container_name: APIGateway
-    networks:
-      - TextServiceNetwork
-      - UserServiceNetwork
-    depends_on:
-      - text_service_follower
-
   # TextServiceLeader
   text_service_leader:
     build:
@@ -187,7 +195,8 @@ services:
       dockerfile: Dockerfile
     container_name: TextServiceLeader
     networks:
-      - TextServiceNetwork
+      - translator-backnet
+    restart: on-failure
     depends_on:
       text_service_db_leader:
         condition: service_healthy
@@ -199,29 +208,30 @@ services:
       dockerfile: Dockerfile
     container_name: TextServiceFollower
     networks:
-      - TextServiceNetwork
+      - translator-backnet
+    restart: on-failure
     depends_on:
       text_service_db_follower:
         condition: service_healthy
 
-  test-webserver:
-    build:
-      context: ./webserver
-      dockerfile: Dockerfile
-    container_name: test-webserver
-    networks:
-      - TextServiceNetwork
-      - UserServiceNetwork
+  #test-webserver:
+  #  build:
+  #    context: ./webserver
+  #    dockerfile: Dockerfile
+  #  container_name: test-webserver
+  #  networks:
+  #    - translator-backnet
+  #  restart: on-failure
   #  ports:
   #    - "9090:9090"
 
 
+  # Angular Frontend
   angular-application:
     container_name: angular-application
     hostname: angular-application
     networks:
-      - TextServiceNetwork
-      - UserServiceNetwork
+      - translator-frontnet
     build:
       context: ./angular/translator
       dockerfile: Dockerfile
@@ -231,12 +241,34 @@ services:
     restart: on-failure
 
 
+    # API Gateway
+  api_gateway:
+    container_name: APIGateway
+    hostname: api-gateway
+    build:
+      context: ./APIGateway/
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    restart: on-failure
+    networks:
+      - translator-frontnet
+      - translator-backnet
+    depends_on:
+      - text_service_follower
+      - angular-application
+      - transcription
+      - user_service
+
+
 volumes:
   transcription_redis:
+  transcription_rabbitmq:
   translation:
+  textservice_dbfollower:
+  textservice_dbleader:
+  userservice_db:
 
 networks:
-  UserServiceNetwork:
-    driver: bridge
-  TextServiceNetwork:
-    driver: bridge
+  translator-frontnet:
+  translator-backnet:

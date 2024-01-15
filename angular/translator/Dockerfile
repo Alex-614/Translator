@@ -22,5 +22,6 @@ RUN npm run build
 FROM nginx:latest
 
 # Copy the build output to replace the default nginx contents.
-COPY --from=build /usr/local/app/dist/browser /usr/share/nginx/html/static
-RUN mv /usr/share/nginx/html/static/index.html /usr/share/nginx/html/
+#RUN mkdir /usr/share/nginx/html/static
+COPY --from=build /usr/local/app/dist/browser /usr/share/nginx/html
+#RUN mv /usr/share/nginx/html/static/index.html /usr/share/nginx/html/

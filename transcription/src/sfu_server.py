@@ -181,6 +181,8 @@ class Server:
         app._router.add_post("/join", self.join)
         app._router.add_post("/create", self.create)
 
+        app._router.add_post("/healthcheck", self.healthcheck)
+
         # websocket (deprecated)
         #app._router.add_get("/ws", websocket_handler)
 
@@ -197,6 +199,10 @@ class Server:
         
         web.run_app(app, port=self.port, ssl_context=ssl_context)
 
+    async def healthcheck(self, request):
+        return web.Response(
+            content_type='application/json',
+            text=json.dumps({'state': "healthy"}))
 
     #
     # join an existing room
