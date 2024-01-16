@@ -288,7 +288,7 @@ class Server:
         self.rooms[room.getID()] = room
 
         userid = params.get("userid")
-        #self.sendUserSession(userid, room.getUUID())
+        self.sendUserSession(userid, room.getUUID())
 
         user: User = User()
         room.getUsers().append(user)
