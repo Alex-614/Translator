@@ -12,5 +12,6 @@ CREATE TABLE "user_session" (
     id BIGINT PRIMARY KEY,
     user_id BIGINT NOT NULL,
     session_UUID VARCHAR(36) NOT NULL,
+    session_language VARCHAR(5) NOT NULL,
     FOREIGN KEY (user_id) REFERENCES "user"(id)
 );

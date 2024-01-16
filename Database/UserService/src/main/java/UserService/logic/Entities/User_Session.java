@@ -19,11 +19,14 @@ public class User_Session {
     private Long userId;
     @Column(name = "session_UUID")
     private String sessionUUID;
+    @Column(name = "session_language")
+    private String sessionLanguage;
 
     public User_Session(){}
 
-    public User_Session(Long userId, String sessionUUID) {
+    public User_Session(Long userId, String sessionUUID, String sessionLanguage) {
         this.userId = userId;
         this.sessionUUID = sessionUUID;
+        this.sessionLanguage = sessionLanguage;
     }
 }

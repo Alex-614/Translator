@@ -10,7 +10,7 @@ import java.util.Optional;
 //port for user/user_service table
 public interface UserPort {
     User createUser(String name, String email, String password) throws DuplicateEmailException, DatabaseException;
-    User_Session createUserToSession(Long user_id, String session_UUID);
+    User_Session createUserToSession(Long userId, String sessionUUID, String sessionLanguage);
     Optional<User> getUser(Long userId);
     Iterable<User_Session> getAllSessions(Long userId);
     Iterable<User> getAllUsers();

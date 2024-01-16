@@ -120,8 +120,8 @@ public class UserService implements UserPort {
 
     //create entry in database to map created sessions to user
     @Override
-    public User_Session createUserToSession(Long user_id, String session_UUID) {
-        User_Session us = new User_Session(user_id, session_UUID);
+    public User_Session createUserToSession(Long userId, String sessionUUID, String sessionLanguage) {
+        User_Session us = new User_Session(userId, sessionUUID, sessionLanguage);
         return userSessionRepository.save(us);
     }
 }

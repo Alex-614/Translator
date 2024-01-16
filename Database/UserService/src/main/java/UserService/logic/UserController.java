@@ -77,6 +77,6 @@ public class UserController {
     //create an entry in user_session table to map created sessions to user
     @PostMapping("/user_session")
     public User_Session createUserToSession(@RequestBody Map<String,String> body) {
-        return myUserPort.createUserToSession(Long.parseLong(body.get("user_id")), body.get("session_UUID"));
+        return myUserPort.createUserToSession(Long.parseLong(body.get("user_id")), body.get("session_UUID"), body.get("session_language"));
     }
 }
