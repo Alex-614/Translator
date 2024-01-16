@@ -335,10 +335,16 @@ class Server:
             }))
 
     def sendUserSession(self, userid, roomuuid):
-        data = urllib.parse.urlencode({"user_id": userid, "session_UUID": roomuuid}).encode()
-        req =  urllib.request.Request("http://" + self.userservice_host + ":" + self.userservice_port + "/user_session", data=data)
-        req.add_header('Content-Type', 'application/json')
-        resp = urllib.request.urlopen(req)
+        #data = urllib.parse.urlencode({"user_id": str(userid), "session_UUID": str(roomuuid)}).encode()
+        #req =  urllib.request.Request("http://" + str(self.userservice_host) + ":" + str(self.userservice_port) + "/user_session", data=data)
+        #req.add_header('Content-Type', 'application/json')
+        #resp = urllib.request.urlopen(req)
+        req = urllib.request.Request("http://" + self.userservice_host + ":" + self.userservice_port + "/user_session")
+        req.add_header('Content-Type', 'application/json; charset=utf-8')
+        jsondata = json.dumps({"user_id": str(userid), "session_UUID": str(roomuuid)})
+        jsondataasbytes = jsondata.encode('utf-8')   # needs to be bytes
+        req.add_header('Content-Length', len(jsondataasbytes))
+        response = urllib.request.urlopen(req, jsondataasbytes)
 
     #
     # deprecated
