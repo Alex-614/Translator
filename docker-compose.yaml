@@ -17,41 +17,41 @@ services:
     #ports:
     #  - "2700:2700"
     depends_on:
-      transcription_redis:
+      transcription-redis:
         condition: service_healthy
-      transcription_rabbitmq:
+      transcription-rabbitmq:
         condition: service_healthy
       translation:
         condition: service_healthy
     restart: on-failure
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://transcription:2700/healthcheck"]
+      test: ["CMD-SHELL", "curl --fail http://localhost:2700/healthcheck || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 2
-      start_period: 1m
+      start_period: 2m
       start_interval: 5s
     environment:
       - TRANSCRIPTION_DEBUGMODE=True
       - TRANSLATION_HOST=translation
       - TRANSLATION_PORT=5000
-      - RABBITMQ_HOST=transcription_rabbitmq
+      - RABBITMQ_HOST=transcription-rabbitmq
       - RABBITMQ_PORT=5672
-      - REDIS_HOST=transcription_redis
+      - REDIS_HOST=transcription-redis
       - REDIS_PORT=6379
-      - USER_SERVICE_HOST=user_service
+      - USER_SERVICE_HOST=user-service
       - USER_SERVICE_PORT=8080
       - TRANSCRIPTION_PORT=2700
       - VOSK_MODEL_PATHS={"en":"models/vosk-model-en-us-0.22","de":"models/vosk-model-de-0.21"}
 
   # Redis for joinids from Transcription Service
-  transcription_redis:
-    container_name: transcription_redis
-    hostname: transcription_redis
+  transcription-redis:
+    container_name: transcription-redis
+    hostname: transcription-redis
     networks:
       - translator-backnet
     volumes:
-      - transcription_redis:/data
+      - transcription-redis:/data
     image: redis
     #ports:
     #  - "6379:6379"
@@ -97,14 +97,14 @@ services:
     #  - TRANSCRIPTION_DEBUGMODE=False
 
   # RabbitMQ for Transcription to TextServiceLeader
-  transcription_rabbitmq:
-    container_name: transcription_rabbitmq
-    hostname: transcription_rabbitmq
+  transcription-rabbitmq:
+    container_name: transcription-rabbitmq
+    hostname: transcription-rabbitmq
     networks:
       - translator-backnet
     image: rabbitmq:management
     volumes:
-      - transcription_rabbitmq:/var/lib/rabbitmq
+      - transcription-rabbitmq:/var/lib/rabbitmq
       - ./init/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
       - ./init/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
     #ports:
@@ -120,64 +120,71 @@ services:
       start_interval: 5s
 
   # UserServiceDB
-  user_service_db:
-    build:
-      context: ./Database/Dockerimages/UserDBImage
-      dockerfile: Dockerfile
-    container_name: UserServiceDB
+  user-service-db:
+    image: postgres:16.1
+    container_name: user-service-db
     networks:
       - translator-backnet
     volumes:
-      - userservice_db:/var/lib/postgresql/data
+      - userservice-db:/var/lib/postgresql/data
+      - ./init/UserDB/00-init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
     restart: on-failure
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
+    environment:
+      POSTGRES_DB: userdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
 
   # UserService
-  user_service:
+  user-service:
     build:
       context: ./Database/UserService
       dockerfile: Dockerfile
-    #ports:
-    #  - "8080:8080"
-    container_name: UserService
+    container_name: user-service
     networks:
       - translator-backnet
     restart: on-failure
     depends_on:
-      user_service_db:
+      user-service-db:
         condition: service_healthy
 
   # TextServiceDB Leader
-  text_service_db_leader:
-    build:
-      context: ./Database/Dockerimages/TextDBImage/Leader
-      dockerfile: Leader.Dockerfile
-    container_name: TextServiceDBLeader
+  text-db-leader:
+    image: postgres:16.1
+    container_name: text-db-leader
     networks:
       - translator-backnet
     volumes:
-      - textservice_dbleader:/var/lib/postgresql/data
+      - text-db-leader:/var/lib/postgresql/data
+      - ./init/TextDBLeader/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init/TextDBLeader/leader_init.sh:/docker-entrypoint-initdb.d/leader_init.sh
     restart: on-failure
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
+    environment:
+      POSTGRES_DB: textdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGPORT: 6543
 
   # TextServiceDB Follower
-  text_service_db_follower:
-    build:
-      context: ./Database/Dockerimages/TextDBImage/Follower
-      dockerfile: Follower.Dockerfile
-    container_name: TextServiceDBFollower
+  text-db-follower:
+    image: postgres:16.1
+    container_name: text-db-follower
     networks:
       - translator-backnet
     volumes:
-      - textservice_dbfollower:/var/lib/postgresql/data
+      - text-db-follower:/var/lib/postgresql/data
+      - ./init/TextDBFollower/pg_hba.conf:/tmp/pg_hba.conf:ro
+      - ./init/TextDBFollower/postgresql.conf:/tmp/postgresql.conf:ro
+      - ./init/TextDBFollower/follower_init.sh:/docker-entrypoint-initdb.d/follower_init.sh
     restart: on-failure
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
@@ -185,33 +192,39 @@ services:
       timeout: 5s
       retries: 5
     depends_on:
-      text_service_db_leader:
+      text-db-leader:
         condition: service_healthy
+    environment:
+      POSTGRES_DB: tmp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGPORT: 6544
+
 
   # TextServiceLeader
-  text_service_leader:
+  text-service-leader:
     build:
       context: ./Database/TextServiceLeader
       dockerfile: Dockerfile
-    container_name: TextServiceLeader
+    container_name: text-service-leader
     networks:
       - translator-backnet
     restart: on-failure
     depends_on:
-      text_service_db_leader:
+      text-db-leader:
         condition: service_healthy
 
   # TextServiceFollower
-  text_service_follower:
+  text-service-follower:
     build:
       context: ./Database/TextServiceFollower
       dockerfile: Dockerfile
-    container_name: TextServiceFollower
+    container_name: text-service-follower
     networks:
       - translator-backnet
     restart: on-failure
     depends_on:
-      text_service_db_follower:
+      text-db-follower:
         condition: service_healthy
 
   #test-webserver:
@@ -236,14 +249,12 @@ services:
       context: ./angular/translator
       dockerfile: Dockerfile
     image: angular-application
-    ports:
-      - "9090:80"
     restart: on-failure
 
 
     # API Gateway
   api_gateway:
-    container_name: APIGateway
+    container_name: api-gateway
     hostname: api-gateway
     build:
       context: ./APIGateway/
@@ -255,19 +266,23 @@ services:
       - translator-frontnet
       - translator-backnet
     depends_on:
-      - text_service_follower
-      - angular-application
-      - transcription
-      - user_service
+      text-service-follower:
+        condition: service_started
+      angular-application:
+        condition: service_started
+      transcription:
+        condition: service_healthy
+      user-service:
+        condition: service_started
 
 
 volumes:
-  transcription_redis:
-  transcription_rabbitmq:
+  transcription-redis:
+  transcription-rabbitmq:
   translation:
-  textservice_dbfollower:
-  textservice_dbleader:
-  userservice_db:
+  text-db-follower:
+  text-db-leader:
+  userservice-db:
 
 networks:
   translator-frontnet:

@@ -12,10 +12,10 @@ public class APIGatewayConfig {
                 return builder.routes() // keep the order, it is significant
                                 // UserService route
                                 .route("UserService", r -> r.path("/user/**")
-                                .uri("http://UserService:8081"))
+                                .uri("http://user-service:8081"))
                                 // FollowerTextService route
                                 .route("FollowerTextService", r -> r.path("/text/**")
-                                .uri("http://TextServiceFollower:8083"))
+                                .uri("http://text-service-follower:8083"))
                                 // transcription routes
                                 .route("transcription_join", r -> r.path("/join/**")
                                 .uri("http://transcription:2700"))

@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://TextServiceDBFollower:6544/textdb
+    url: jdbc:postgresql://text-db-follower:6544/textdb
     username: postgres
     password: postgres
     driverClassName: org.postgresql.Driver

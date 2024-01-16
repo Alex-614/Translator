@@ -3,12 +3,12 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://TextServiceDBLeader:6543/textdb
+    url: jdbc:postgresql://text-db-leader:6543/textdb
     username: postgres
     password: postgres
     driverClassName: org.postgresql.Driver
   rabbitmq:
-    host: transcription_rabbitmq
+    host: transcription-rabbitmq
     port: 5672
     username: guest
     password: guest
