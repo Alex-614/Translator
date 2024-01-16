@@ -14,8 +14,7 @@ services:
       context: ./transcription
       dockerfile: Dockerfile
     image: translator-transcription
-    #ports:
-    #  - "2700:2700"
+    restart: on-failure
     depends_on:
       transcription-redis:
         condition: service_healthy
@@ -23,7 +22,6 @@ services:
         condition: service_healthy
       translation:
         condition: service_healthy
-    restart: on-failure
     healthcheck:
       test: ["CMD-SHELL", "curl --fail http://localhost:2700/healthcheck || exit 1"]
       interval: 30s
@@ -50,12 +48,10 @@ services:
     hostname: transcription-redis
     networks:
       - translator-backnet
+    image: redis
+    restart: on-failure
     volumes:
       - transcription-redis:/data
-    image: redis
-    #ports:
-    #  - "6379:6379"
-    restart: on-failure
     command: [sh, -c, "rm -f /data/dump.rdb && redis-server"]
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
@@ -75,8 +71,6 @@ services:
       context: ./translation
       dockerfile: Dockerfile
     image: translator-translation
-    #ports:
-    #  - "5000:5000"
     restart: on-failure
     volumes:
       - translation:/data
@@ -94,7 +88,6 @@ services:
       - LT_HOST=0.0.0.0
       - LT_LOAD_ONLY=en,de
       - LT_DEBUG=false
-    #  - TRANSCRIPTION_DEBUGMODE=False
 
   # RabbitMQ for Transcription to TextServiceLeader
   transcription-rabbitmq:
@@ -103,14 +96,11 @@ services:
     networks:
       - translator-backnet
     image: rabbitmq:management
+    restart: on-failure
     volumes:
       - transcription-rabbitmq:/var/lib/rabbitmq
       - ./init/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
       - ./init/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
-    #ports:
-    #  - "5672:5672"
-    #  - "15672:15672"
-    restart: on-failure
     healthcheck:
       test: rabbitmq-diagnostics -q ping
       interval: 30s
@@ -121,14 +111,15 @@ services:
 
   # UserServiceDB
   user-service-db:
-    image: postgres:16.1
     container_name: user-service-db
+    hostname: user-service-db
     networks:
       - translator-backnet
+    image: postgres:16.1
+    restart: on-failure
     volumes:
       - userservice-db:/var/lib/postgresql/data
       - ./init/UserDB/00-init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
-    restart: on-failure
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
@@ -141,12 +132,14 @@ services:
 
   # UserService
   user-service:
-    build:
-      context: ./Database/UserService
-      dockerfile: Dockerfile
     container_name: user-service
+    hostname: user-service
     networks:
       - translator-backnet
+    build:
+      context: ./Database/UserService
+      dockerfile: dockerfile
+    image: translator-user-service
     restart: on-failure
     depends_on:
       user-service-db:
@@ -154,15 +147,16 @@ services:
 
   # TextServiceDB Leader
   text-db-leader:
-    image: postgres:16.1
     container_name: text-db-leader
+    hostname: text-db-leader
     networks:
       - translator-backnet
+    image: postgres:16.1
+    restart: on-failure
     volumes:
       - text-db-leader:/var/lib/postgresql/data
       - ./init/TextDBLeader/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./init/TextDBLeader/leader_init.sh:/docker-entrypoint-initdb.d/leader_init.sh
-    restart: on-failure
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
@@ -176,16 +170,17 @@ services:
 
   # TextServiceDB Follower
   text-db-follower:
-    image: postgres:16.1
     container_name: text-db-follower
+    hostname: text-db-follower
     networks:
       - translator-backnet
+    image: postgres:16.1
+    restart: on-failure
     volumes:
       - text-db-follower:/var/lib/postgresql/data
       - ./init/TextDBFollower/pg_hba.conf:/tmp/pg_hba.conf:ro
       - ./init/TextDBFollower/postgresql.conf:/tmp/postgresql.conf:ro
       - ./init/TextDBFollower/follower_init.sh:/docker-entrypoint-initdb.d/follower_init.sh
-    restart: on-failure
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
@@ -203,12 +198,14 @@ services:
 
   # TextServiceLeader
   text-service-leader:
+    container_name: text-service-leader
+    hostname: text-service-leader
+    networks:
+      - translator-backnet
     build:
       context: ./Database/TextServiceLeader
       dockerfile: Dockerfile
-    container_name: text-service-leader
-    networks:
-      - translator-backnet
+    image: translator-text-service-leader
     restart: on-failure
     depends_on:
       text-db-leader:
@@ -216,12 +213,14 @@ services:
 
   # TextServiceFollower
   text-service-follower:
+    container_name: text-service-follower
+    hostname: text-service-follower
+    networks:
+      - translator-backnet
     build:
       context: ./Database/TextServiceFollower
       dockerfile: Dockerfile
-    container_name: text-service-follower
-    networks:
-      - translator-backnet
+    image: translator-text-service-follower
     restart: on-failure
     depends_on:
       text-db-follower:
@@ -241,19 +240,20 @@ services:
     restart: on-failure
 
 
-    # API Gateway
-  api_gateway:
+  # API Gateway
+  api-gateway:
     container_name: api-gateway
     hostname: api-gateway
-    build:
-      context: ./APIGateway/
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    restart: on-failure
     networks:
       - translator-frontnet
       - translator-backnet
+    build:
+      context: ./APIGateway
+      dockerfile: Dockerfile
+    image: translator-api-gateway
+    ports:
+      - "8080:8080"
+    restart: on-failure
     depends_on:
       text-service-follower:
         condition: service_started
@@ -276,3 +276,7 @@ volumes:
 networks:
   translator-frontnet:
   translator-backnet:
+
+
+
+
