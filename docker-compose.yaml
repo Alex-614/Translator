@@ -227,17 +227,6 @@ services:
       text-db-follower:
         condition: service_healthy
 
-  #test-webserver:
-  #  build:
-  #    context: ./webserver
-  #    dockerfile: Dockerfile
-  #  container_name: test-webserver
-  #  networks:
-  #    - translator-backnet
-  #  restart: on-failure
-  #  ports:
-  #    - "9090:9090"
-
 
   # Angular Frontend
   angular-application:
