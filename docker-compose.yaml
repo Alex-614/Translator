@@ -269,7 +269,6 @@ volumes:
   transcription-redis:
   transcription-rabbitmq:
   translation:
-  text-db-follower:
   text-db-leader:
   userservice-db:
 
