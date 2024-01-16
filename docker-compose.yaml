@@ -23,11 +23,10 @@ services:
       translation:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl --fail http://localhost:2700/healthcheck || exit 1"]
-      interval: 30s
+      test: ["CMD-SHELL", "curl --fail http://transcription:2700/healthcheck || exit 1"]
+      interval: 10s
       timeout: 5s
-      retries: 2
-      start_period: 2m
+      retries: 5
       start_interval: 5s
     environment:
       - TRANSCRIPTION_DEBUGMODE=True
@@ -151,7 +150,9 @@ services:
     hostname: text-db-leader
     networks:
       - translator-backnet
-    image: postgres:16.1
+    build:
+      context: ./init/TextDBLeader
+      dockerfile: Dockerfile
     restart: on-failure
     volumes:
       - text-db-leader:/var/lib/postgresql/data
@@ -177,7 +178,6 @@ services:
     image: postgres:16.1
     restart: on-failure
     volumes:
-      - text-db-follower:/var/lib/postgresql/data
       - ./init/TextDBFollower/pg_hba.conf:/tmp/pg_hba.conf:ro
       - ./init/TextDBFollower/postgresql.conf:/tmp/postgresql.conf:ro
       - ./init/TextDBFollower/follower_init.sh:/docker-entrypoint-initdb.d/follower_init.sh
