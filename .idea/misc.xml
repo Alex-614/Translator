@@ -17,6 +17,7 @@
     </option>
     <option name="ignoredFiles">
       <set>
+        <option value="$PROJECT_DIR$/Database/TextServiceGateway/pom.xml" />
         <option value="$PROJECT_DIR$/TextServiceGateway/pom.xml" />
       </set>
     </option>
