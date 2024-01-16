@@ -1,5 +1,6 @@
 export interface Session {
     id: number,
     userId: number,
-    sessionUUID: string
+    sessionUUID: string,
+    session_language: string
 }

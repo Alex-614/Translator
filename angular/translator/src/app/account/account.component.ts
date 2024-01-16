@@ -125,7 +125,7 @@ export class AccountComponent {
     this.textService.getTextBySessionUUID(sessionUUID).subscribe(data => {
       console.log(data);
       var completeText: string = "";
-      for (let i = 0; i < data.length; i++){
+      for (let i = 0; i < data.length; i++) {
         completeText += " " + data[i].textLine;
       }
       var filename = "Transkription.txt";
@@ -140,17 +140,16 @@ export class AccountComponent {
   }
 
   //translate a old session transcription
-  async translateSession(){
+  async translateSession() {
     var id = Number(this.ip_sessionId.nativeElement.value);
-    var uuid = this.sessionArray[id].sessionUUID;
+    var uuid = this.sessionArray[id - 1].sessionUUID;
     var completeText: string = "";
-    this.textService.getTextBySessionUUID(uuid).subscribe(data => {
+    this.textService.getTextBySessionUUID(uuid).subscribe(async data => {
       console.log(data);
-      for (let i = 0; i < data.length; i++){
+      for (let i = 0; i < data.length; i++) {
         completeText += " " + data[i].textLine;
       }
       this.textService.getTranslatedText(completeText, this.selectedOriginalLanguage.short, this.selectedTargetLanguage.short);
     });
   }
-
 }

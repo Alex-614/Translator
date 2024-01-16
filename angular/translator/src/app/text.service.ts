@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Session } from './session';
 import { Textpart } from './textpart';
@@ -26,11 +26,10 @@ export class TextService {
   public getTranslatedText(text: string, origLan: string, targetLan: string) {
     console.log("getTranslatedText " + text + " " + origLan + " " + targetLan + " ");
 
-    return "";
-    /*var formdata = new FormData();
-    formdata.append("q", "test 123 rest hallo hallo weihnachten");
-    formdata.append("source", "de");
-    formdata.append("target", "en");
+    var formdata = new FormData();
+    formdata.append("q", text);
+    formdata.append("source", origLan);
+    formdata.append("target", targetLan);
 
     var requestOptions: RequestInit = {
       method: 'POST',
@@ -39,8 +38,17 @@ export class TextService {
     };
 
     fetch(this.url + "/translate", requestOptions)
-      .then(response => response.text())
+      .then(async response => {
+        var filename = "Transkription.txt";
+        var downloadEle = document.createElement('a');
+        downloadEle.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent((await response.text()).slice(19, -3)));
+        downloadEle.setAttribute('download', filename);
+        downloadEle.style.display = 'none';
+        document.body.appendChild(downloadEle);
+        downloadEle.click();
+        document.body.removeChild(downloadEle);
+      })
       .then(result => console.log(result))
-      .catch(error => console.log('error', error));*/
+      .catch(error => console.log('error', error));
   }
 }
