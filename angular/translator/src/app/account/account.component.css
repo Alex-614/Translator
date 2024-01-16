@@ -24,6 +24,14 @@ main p-dropdown img {
 	width: 18px;
 }
 
+#ip_sessionId {
+	width: 10rem;
+	height: 3rem;
+	font-size: 1.5rem;
+	border-radius: 8px;
+	margin-top: 1rem;
+}
+
 .p_big {
 	color: white;
 	text-shadow: 2px 2px 1px #3d768a;
@@ -32,7 +40,6 @@ main p-dropdown img {
 }
 
 .p_small{
-	padding-top: 1rem;
 	font-size: 1rem;
 	color: white;
 	text-shadow: 2px 2px 1px #3d768a;

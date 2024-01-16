@@ -5,7 +5,6 @@ import { DropdownModule } from 'primeng/dropdown';
 import { FormsModule } from '@angular/forms';
 import { Language } from '../language';
 import { TextService } from '../text.service';
-import { Observable } from 'rxjs';
 import { Session } from '../session';
 
 @Component({
@@ -31,28 +30,13 @@ import { Session } from '../session';
         </ng-template>
       </p-dropdown>
       <button id="btn_sessionHost" class="btn_main" (click)=checkForSession()>Host a new session</button>
-      <p class="p_big">or</p>
-      <p class="p_big">Load recent session transcriptions:</p>
+      <p class="p_small">or</p>
+      <p class="p_small">Load recent session transcriptions (click id to download):</p>
       <div id="div_sessionList" #div_sessionList>
-        <p #p_noTexts class="p_textDownload">No recent transcriptions available.</p>
+        <p #p_noTexts class="p_textDownload"></p>
       </div>
-      <p class="p_big">or</p>
-      <p class="p_big">Translate a recent session transcription:</p>
-      <p class="p_small">Choose the original language:</p>
-      <p-dropdown 
-        [options]="languages"
-        placeholder="Select a language"
-        optionLabel="name"
-        [(ngModel)]="selectedOriginalLanguage">
-        <ng-template let-language pTemplate="item">
-          <div class="bg-template">
-            <div class="dropdown_list">
-                <img src="{{ language.icon }}">
-                {{ language.name }}
-            </div>
-          </div>
-        </ng-template>
-      </p-dropdown>
+      <p class="p_small">or</p>
+      <p class="p_small">Translate a recent session transcription:</p>
       <p class="p_small">Choose the target language:</p>
       <p-dropdown 
         [options]="languages"
@@ -77,7 +61,6 @@ import { Session } from '../session';
 export class AccountComponent {
   userId: string;
   selectedLanguage: Language;
-  selectedOriginalLanguage: Language;
   selectedTargetLanguage: Language;
   private sessionArray: Session[];
   private textService: TextService = inject(TextService);
@@ -143,13 +126,14 @@ export class AccountComponent {
   async translateSession() {
     var id = Number(this.ip_sessionId.nativeElement.value);
     var uuid = this.sessionArray[id - 1].sessionUUID;
+    var lan = this.sessionArray[id -1].sessionLanguage;
     var completeText: string = "";
     this.textService.getTextBySessionUUID(uuid).subscribe(async data => {
       console.log(data);
       for (let i = 0; i < data.length; i++) {
         completeText += " " + data[i].textLine;
       }
-      this.textService.getTranslatedText(completeText, this.selectedOriginalLanguage.short, this.selectedTargetLanguage.short);
+      this.textService.getTranslatedText(completeText, lan, this.selectedTargetLanguage.short);
     });
   }
 }
