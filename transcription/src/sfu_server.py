@@ -334,7 +334,7 @@ class Server:
                 'roomid': room.getID()
             }))
 
-    def sendUserSession(self, userid, roomuuid):
+    def sendUserSession(self, userid, roomuuid, language):
         req = urllib.request.Request("http://" + self.userservice_host + ":" + self.userservice_port + "/user_session")
         req.add_header('Content-Type', 'application/json; charset=utf-8')
         jsondata = json.dumps({"user_id": str(userid), "session_UUID": str(roomuuid), "session_language": str(language)})
