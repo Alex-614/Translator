@@ -181,7 +181,7 @@ class Server:
         app._router.add_post("/join", self.join)
         app._router.add_post("/create", self.create)
 
-        app._router.add_post("/healthcheck", self.healthcheck)
+        app._router.add_get("/healthcheck", self.healthcheck)
 
         # websocket (deprecated)
         #app._router.add_get("/ws", websocket_handler)

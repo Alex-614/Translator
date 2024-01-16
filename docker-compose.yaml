@@ -23,14 +23,15 @@ services:
       translation:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl --fail http://localhost:2700/healthcheck || exit 1"]
-      interval: 30s
+      test: ["CMD-SHELL", "curl --fail http://transcription:2700/healthcheck || exit 1"]
+      interval: 10s
       timeout: 5s
-      retries: 2
-      start_period: 2m
+      retries: 5
       start_interval: 5s
     environment:
       - TRANSCRIPTION_DEBUGMODE=True
+      - TRANSCRIPTION_PORT=2700
+      - VOSK_MODEL_PATHS={"en":"models/vosk-model-en-us-0.22","de":"models/vosk-model-de-0.21"}
       - TRANSLATION_HOST=translation
       - TRANSLATION_PORT=5000
       - RABBITMQ_HOST=transcription-rabbitmq
@@ -38,9 +39,7 @@ services:
       - REDIS_HOST=transcription-redis
       - REDIS_PORT=6379
       - USER_SERVICE_HOST=user-service
-      - USER_SERVICE_PORT=8080
-      - TRANSCRIPTION_PORT=2700
-      - VOSK_MODEL_PATHS={"en":"models/vosk-model-en-us-0.22","de":"models/vosk-model-de-0.21"}
+      - USER_SERVICE_PORT=8081
 
   # Redis for joinids from Transcription Service
   transcription-redis:
@@ -151,7 +150,9 @@ services:
     hostname: text-db-leader
     networks:
       - translator-backnet
-    image: postgres:16.1
+    build:
+      context: ./init/TextDBLeader
+      dockerfile: Dockerfile
     restart: on-failure
     volumes:
       - text-db-leader:/var/lib/postgresql/data
@@ -177,7 +178,6 @@ services:
     image: postgres:16.1
     restart: on-failure
     volumes:
-      - text-db-follower:/var/lib/postgresql/data
       - ./init/TextDBFollower/pg_hba.conf:/tmp/pg_hba.conf:ro
       - ./init/TextDBFollower/postgresql.conf:/tmp/postgresql.conf:ro
       - ./init/TextDBFollower/follower_init.sh:/docker-entrypoint-initdb.d/follower_init.sh
@@ -269,7 +269,6 @@ volumes:
   transcription-redis:
   transcription-rabbitmq:
   translation:
-  text-db-follower:
   text-db-leader:
   userservice-db:
 
