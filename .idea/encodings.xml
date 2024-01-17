@@ -5,15 +5,15 @@
     <file url="file://$PROJECT_DIR$/APIGateway/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Database/TextService/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Database/TextService/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Database/TextServiceFollower/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Database/TextServiceFollower/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Database/TextServiceGateway/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Database/TextServiceGateway/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Database/TextServiceLeader/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Database/TextServiceLeader/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Database/UserService/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/Database/UserService/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/TextServiceFollower/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/TextServiceFollower/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/TextServiceGateway/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/TextServiceGateway/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/TextServiceLeader/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/TextServiceLeader/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/UserService/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/UserService/src/main/resources" charset="UTF-8" />
   </component>
 </project>

@@ -34,7 +34,7 @@ export const LANGUAGES: Language[] = [
     {
         id: 6,
         name: 'Norwegian',
-        short: 'no',
+        short: 'nb',
         icon: '../assets/lang_icons/norwegian.png'
     }
 ];

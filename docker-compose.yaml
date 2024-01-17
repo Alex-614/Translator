@@ -27,6 +27,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 5m
       start_interval: 5s
     environment:
       - TRANSCRIPTION_DEBUGMODE=True
@@ -47,10 +48,8 @@ services:
     hostname: transcription-redis
     networks:
       - translator-backnet
-    image: redis
+    image: redis:7.2.4
     restart: on-failure
-    volumes:
-      - transcription-redis:/data
     command: [sh, -c, "rm -f /data/dump.rdb && redis-server"]
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
@@ -66,10 +65,7 @@ services:
     hostname: translation
     networks:
       - translator-backnet
-    build:
-      context: ./translation
-      dockerfile: Dockerfile
-    image: translator-translation
+    image: libretranslate/libretranslate
     restart: on-failure
     volumes:
       - translation:/data
@@ -78,15 +74,15 @@ services:
       interval: 30s
       timeout: 5s
       retries: 2
-      start_period: 1m
+      start_period: 5m
       start_interval: 5s
     environment:
-      - LT_DISABLE_FILES_TRANSLATION=true
-      - LT_DISABLE_WEB_UI=true
-      - LT_UPDATE_MODELS=true
-      - LT_HOST=0.0.0.0
-      - LT_LOAD_ONLY=en,de
-      - LT_DEBUG=false
+      LT_DISABLE_FILES_TRANSLATION: true
+      LT_DISABLE_WEB_UI: true
+      LT_UPDATE_MODELS: true
+      LT_HOST: 0.0.0.0
+      LT_LOAD_ONLY: en,de,fr,it,es,nb
+      LT_DEBUG: false
 
   # RabbitMQ for Transcription to TextServiceLeader
   transcription-rabbitmq:
@@ -136,7 +132,7 @@ services:
     networks:
       - translator-backnet
     build:
-      context: ./Database/UserService
+      context: ./UserService
       dockerfile: Dockerfile
     image: translator-user-service
     restart: on-failure
@@ -150,9 +146,7 @@ services:
     hostname: text-db-leader
     networks:
       - translator-backnet
-    build:
-      context: ./init/TextDBLeader
-      dockerfile: Dockerfile
+    image: postgres:16.1
     restart: on-failure
     volumes:
       - text-db-leader:/var/lib/postgresql/data
@@ -203,7 +197,7 @@ services:
     networks:
       - translator-backnet
     build:
-      context: ./Database/TextServiceLeader
+      context: ./TextServiceLeader
       dockerfile: Dockerfile
     image: translator-text-service-leader
     restart: on-failure
@@ -218,7 +212,7 @@ services:
     networks:
       - translator-backnet
     build:
-      context: ./Database/TextServiceFollower
+      context: ./TextServiceFollower
       dockerfile: Dockerfile
     image: translator-text-service-follower
     restart: on-failure
@@ -266,7 +260,6 @@ services:
 
 
 volumes:
-  transcription-redis:
   transcription-rabbitmq:
   translation:
   text-db-leader:
